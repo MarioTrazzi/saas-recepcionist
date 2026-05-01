@@ -1,0 +1,8 @@
+[build]
+root_dir = "backend"
+
+[deploy]
+healthcheckPath = "/health"
+healthcheckTimeout = 300
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 5
