@@ -1,6 +1,9 @@
 import axios from 'axios'
 
-const api = axios.create({ baseURL: '/api' })
+// Em produção (Railway), VITE_API_URL aponta para o backend.
+// Em dev local, fica vazio e o proxy do Vite cuida do /api.
+const BASE = (import.meta.env.VITE_API_URL as string) || ''
+const api = axios.create({ baseURL: `${BASE}/api` })
 
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('token')
@@ -42,11 +45,18 @@ export const phoneApi = {
   assign: (phoneSid: string) => api.post('/phone/assign', { phoneSid }).then(r => r.data),
   provision: (areaCode?: string) => api.post('/phone/provision', { areaCode }).then(r => r.data),
   createElevenLabsAgent: () => api.post('/phone/create-elevenlabs-agent').then(r => r.data),
+  getElevenLabsAgent: () => api.get('/phone/elevenlabs-agent').then(r => r.data),
+  updateElevenLabsAgent: (data: { name?: string; prompt?: string; firstMessage?: string; language?: string; voiceId?: string }) =>
+    api.patch('/phone/elevenlabs-agent', data).then(r => r.data),
+  listElevenLabsVoices: () => api.get('/phone/elevenlabs-voices').then(r => r.data),
 }
 
 export const whatsappApi = {
-  setup: (phoneNumber: string) => api.post('/whatsapp/setup', { phoneNumber }).then(r => r.data),
+  setupCloudApi: (phoneNumberId: string, accessToken: string) =>
+    api.post('/whatsapp/setup-cloudapi', { phoneNumberId, accessToken }).then(r => r.data),
   status: () => api.get('/whatsapp/status').then(r => r.data),
+  // kept for backward compat
+  setup: (phoneNumber: string) => api.post('/whatsapp/setup', { phoneNumber }).then(r => r.data),
 }
 
 export const knowledgeApi = {

@@ -63,6 +63,13 @@ export class Tenant {
   @Column({ nullable: true })
   whatsappPhoneNumber: string
 
+  // WhatsApp Business Cloud API credentials (official Meta integration)
+  @Column({ nullable: true })
+  metaPhoneNumberId: string
+
+  @Column({ nullable: true })
+  metaAccessToken: string
+
   @Column({ type: 'boolean', default: false })
   phoneChannelEnabled: boolean
 

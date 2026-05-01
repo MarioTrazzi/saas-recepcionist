@@ -20,7 +20,7 @@ export default function BillingPage() {
           {[...Array(3)].map((_, i) => <div key={i} className="card h-80 animate-pulse" />)}
         </div>
       ) : (
-        <div className="grid md:grid-cols-3 gap-6 max-w-4xl">
+        <div className="grid md:grid-cols-3 gap-6">
           {plans.map((plan: any) => (
             <div key={plan.id} className={`card p-6 relative ${plan.id === 'pro' ? 'border-primary ring-1 ring-primary' : ''}`}>
               {plan.id === 'pro' && (
@@ -74,7 +74,7 @@ export default function BillingPage() {
         </div>
       )}
 
-      <div className="mt-8 card p-4 max-w-4xl">
+      <div className="mt-8 card p-4">
         <div className="flex items-center gap-3">
           <Zap className="h-5 w-5 text-primary flex-shrink-0" />
           <p className="text-sm text-gray-400">

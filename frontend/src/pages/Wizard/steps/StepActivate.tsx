@@ -19,7 +19,7 @@ export function StepActivate({ data, onBack, onFinish, saving }: Props) {
   const items = [
     { icon: Zap, label: 'Nome do agente', value: data.agentName, ok: !!data.agentName },
     { icon: Phone, label: 'Canal telefone', value: phoneLabel, ok: data.phoneEnabled && !!data.phoneNumberSid },
-    { icon: MessageSquare, label: 'Canal WhatsApp', value: data.whatsappEnabled ? `+55${data.whatsappPhone.replace('+55', '')}` : 'Desativado', ok: true },
+    { icon: MessageSquare, label: 'Canal WhatsApp', value: data.whatsappEnabled ? (data.whatsappVerified ? 'Cloud API conectado' : 'Ativado (sem credenciais)') : 'Desativado', ok: !data.whatsappEnabled || data.whatsappVerified },
     { icon: BookOpen, label: 'Base de conhecimento', value: `${data.knowledgeItems.length} item(s)`, ok: true },
     { icon: UserCheck, label: 'Transferência', value: data.handoffMode === 'none' ? 'Desativada' : 'Configurada', ok: true },
     { icon: Calendar, label: 'Agendamento', value: data.calendarMode === 'google' ? 'Google Agenda' : data.calendarMode === 'builtin' ? `Agenda própria (${data.calendarSlotMinutes}min/consulta)` : 'Desativado', ok: true },

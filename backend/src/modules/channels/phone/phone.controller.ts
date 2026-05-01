@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param, Res, UseGuards, Request, Get, Headers } from '@nestjs/common'
+import { Controller, Post, Body, Param, Res, UseGuards, Request, Get, Patch, Headers } from '@nestjs/common'
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger'
 import { Response } from 'express'
 import { PhoneService } from './phone.service'
@@ -65,6 +65,30 @@ export class PhoneController {
   async createAgent(@Request() req) {
     const agentId = await this.svc.createElevenLabsAgent(req.user.tenantId)
     return { agentId }
+  }
+
+  // Authenticated — get current ElevenLabs agent config
+  @Get('elevenlabs-agent')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async getElevenLabsAgent(@Request() req) {
+    return this.svc.getElevenLabsAgent(req.user.tenantId)
+  }
+
+  // Authenticated — update ElevenLabs agent config
+  @Patch('elevenlabs-agent')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async updateElevenLabsAgent(@Request() req, @Body() body: any) {
+    return this.svc.updateElevenLabsAgent(req.user.tenantId, body)
+  }
+
+  // Authenticated — list ElevenLabs voices for this account
+  @Get('elevenlabs-voices')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async listVoices() {
+    return this.svc.listElevenLabsVoices()
   }
 
   // Public webhook — called by ElevenLabs when agent decides to transfer the call

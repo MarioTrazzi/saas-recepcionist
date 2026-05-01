@@ -49,14 +49,17 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    env_file: ./backend/.env
     environment:
       DATABASE_URL: postgresql://receptionist:receptionist@postgres:5432/receptionist
       REDIS_URL: redis://redis:6379
+      EVOLUTION_API_URL: http://evolution-api:8080
     ports:
       - '3001:3001'
     depends_on:
       - postgres
       - redis
+      - evolution-api
     volumes:
       - ./backend:/app
       - /app/node_modules
@@ -65,6 +68,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    environment:
+      BACKEND_URL: http://backend:3001
     ports:
       - '5173:5173'
     depends_on:

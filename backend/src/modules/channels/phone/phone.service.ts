@@ -217,14 +217,17 @@ export class PhoneService {
               '(2) a situação envolver urgência médica ou emergência, ' +
               '(3) após duas tentativas sem resolver o problema do cliente. ' +
               'Não use por padrão — tente resolver primeiro.',
-            api: {
+            webhook: {
               url: `${backendUrl}/api/phone/transfer/{{agent_id}}`,
               method: 'POST',
+              api_schema: { type: 'object', properties: {}, required: [] },
             },
-            parameters: { type: 'object', properties: {}, required: [] },
           },
         ]
       : []
+
+    // ElevenLabs requires lowercase language codes (e.g. pt-br, not pt-BR)
+    const language = (cfg.language || 'pt-br').toLowerCase()
 
     const agentDisplayName = `${cfg.agentName} - ${tenant.name}`
 
@@ -234,11 +237,14 @@ export class PhoneService {
         name: agentDisplayName,
         conversation_config: {
           agent: {
-            prompt: { prompt: systemPrompt, tools },
+            prompt: { prompt: systemPrompt, tools, llm: 'gemini-2.0-flash' },
             first_message: cfg.greetingMessage,
-            language: cfg.language,
+            language,
           },
-          tts: { voice_id: tenant.elevenLabsVoiceId || 'Rachel' },
+          tts: {
+            voice_id: tenant.elevenLabsVoiceId || this.config.get('ELEVENLABS_DEFAULT_VOICE_ID') || 'Rachel',
+            model_id: 'eleven_turbo_v2_5', // multilingual model required for non-English agents
+          },
         },
       },
       { headers: { 'xi-api-key': this.config.get('ELEVENLABS_API_KEY') } },
@@ -248,6 +254,93 @@ export class PhoneService {
     await this.tenantsService.update(tenantId, { elevenLabsAgentId: agentId })
     this.logger.log(`[${tenantId}] ElevenLabs agent created: ${agentId} (transfer tool: ${hasHandoff})`)
     return agentId
+  }
+
+  async getElevenLabsAgent(tenantId: string) {
+    const tenant = await this.tenantsService.findById(tenantId)
+    if (!tenant.elevenLabsAgentId) throw new NotFoundException('Agente ElevenLabs não criado')
+    const apiKey = this.config.get('ELEVENLABS_API_KEY')
+    const { data } = await axios.get(
+      `https://api.elevenlabs.io/v1/convai/agents/${tenant.elevenLabsAgentId}`,
+      { headers: { 'xi-api-key': apiKey } },
+    )
+    const cfg = data.conversation_config || {}
+    return {
+      agentId: tenant.elevenLabsAgentId,
+      name: data.name,
+      prompt: cfg.agent?.prompt?.prompt,
+      firstMessage: cfg.agent?.first_message,
+      language: cfg.agent?.language || 'pt-br',
+      voiceId: cfg.tts?.voice_id,
+      modelId: cfg.tts?.model_id,
+      expressiveMode: cfg.tts?.expressive_mode ?? false,
+      interruptible: !(cfg.agent?.disable_first_message_interruptions ?? false),
+      llm: cfg.agent?.prompt?.llm || 'gemini-2.0-flash',
+    }
+  }
+
+  async updateElevenLabsAgent(tenantId: string, dto: {
+    name?: string
+    prompt?: string
+    firstMessage?: string
+    language?: string
+    voiceId?: string
+    expressiveMode?: boolean
+    interruptible?: boolean
+    llm?: string
+  }) {
+    const tenant = await this.tenantsService.findById(tenantId)
+    if (!tenant.elevenLabsAgentId) throw new NotFoundException('Agente ElevenLabs não criado')
+    const apiKey = this.config.get('ELEVENLABS_API_KEY')
+
+    const language = dto.language ? dto.language.toLowerCase() : undefined
+
+    await axios.patch(
+      `https://api.elevenlabs.io/v1/convai/agents/${tenant.elevenLabsAgentId}`,
+      {
+        ...(dto.name !== undefined && { name: dto.name }),
+        conversation_config: {
+          agent: {
+            ...(dto.prompt !== undefined && { prompt: {
+              prompt: dto.prompt,
+              ...(dto.llm !== undefined && { llm: dto.llm }),
+            }}),
+            ...(dto.firstMessage !== undefined && { first_message: dto.firstMessage }),
+            ...(language && { language }),
+            ...(dto.interruptible !== undefined && {
+              disable_first_message_interruptions: !dto.interruptible,
+            }),
+          },
+          tts: {
+            model_id: 'eleven_turbo_v2_5',
+            ...(dto.voiceId !== undefined && { voice_id: dto.voiceId }),
+            ...(dto.expressiveMode !== undefined && { expressive_mode: dto.expressiveMode }),
+          },
+        },
+      },
+      { headers: { 'xi-api-key': apiKey } },
+    )
+
+    if (dto.voiceId) {
+      await this.tenantsService.update(tenantId, { elevenLabsVoiceId: dto.voiceId })
+    }
+
+    this.logger.log(`[${tenantId}] ElevenLabs agent updated`)
+    return { ok: true }
+  }
+
+  async listElevenLabsVoices() {
+    const apiKey = this.config.get('ELEVENLABS_API_KEY')
+    const { data } = await axios.get(
+      'https://api.elevenlabs.io/v1/voices',
+      { headers: { 'xi-api-key': apiKey } },
+    )
+    return (data.voices || []).map((v: any) => ({
+      id: v.voice_id,
+      name: v.name,
+      preview: v.preview_url,
+      category: v.category,
+    }))
   }
 
   private buildTwiml(content: string): string {

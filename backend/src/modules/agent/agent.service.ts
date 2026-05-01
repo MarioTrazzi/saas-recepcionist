@@ -13,7 +13,15 @@ export class AgentService {
     @InjectRepository(AgentConfig) private configRepo: Repository<AgentConfig>,
     private configService: ConfigService,
   ) {
-    this.openai = new OpenAI({ apiKey: configService.get('OPENAI_API_KEY') })
+    const geminiKey = configService.get('GEMINI_API_KEY')
+    if (geminiKey) {
+      this.openai = new OpenAI({
+        apiKey: geminiKey,
+        baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/',
+      })
+    } else {
+      this.openai = new OpenAI({ apiKey: configService.get('OPENAI_API_KEY') })
+    }
   }
 
   async getConfig(tenantId: string): Promise<AgentConfig> {
@@ -43,8 +51,12 @@ export class AgentService {
       { role: 'user', content: userMessage },
     ]
 
+    const model = this.configService.get('GEMINI_API_KEY')
+      ? (this.configService.get('GEMINI_MODEL') || 'gemini-2.0-flash')
+      : (this.configService.get('OPENAI_MODEL') || 'gpt-4o')
+
     const response = await this.openai.chat.completions.create({
-      model: 'gpt-4o',
+      model,
       messages,
       temperature: 0.7,
       max_tokens: 500,

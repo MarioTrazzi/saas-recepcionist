@@ -7,7 +7,7 @@ import { StepKnowledge } from './steps/StepKnowledge'
 import { StepChannels } from './steps/StepChannels'
 import { StepHandoff } from './steps/StepHandoff'
 import { StepActivate } from './steps/StepActivate'
-import { agentApi, phoneApi, calendarApi, tenantApi } from '@/lib/api'
+import { agentApi, phoneApi, calendarApi, tenantApi, whatsappApi } from '@/lib/api'
 
 const STEPS = [
   { id: 1, title: 'Template', desc: 'Escolha o tipo de negócio' },
@@ -30,7 +30,9 @@ export interface WizardData {
   phoneEnabled: boolean
   phoneNumberSid: string
   whatsappEnabled: boolean
-  whatsappPhone: string
+  metaPhoneNumberId: string
+  metaAccessToken: string
+  whatsappVerified: boolean
   handoffMode: string
   handoffPhone: string
   handoffWhatsapp: string
@@ -51,7 +53,9 @@ const EMPTY: WizardData = {
   phoneEnabled: true,
   phoneNumberSid: '',
   whatsappEnabled: false,
-  whatsappPhone: '',
+  metaPhoneNumberId: '',
+  metaAccessToken: '',
+  whatsappVerified: false,
   handoffMode: 'none',
   handoffPhone: '',
   handoffWhatsapp: '',
@@ -102,12 +106,18 @@ export default function WizardPage() {
 
       if (data.phoneEnabled && data.phoneNumberSid) {
         await phoneApi.assign(data.phoneNumberSid)
-        // Non-fatal: ElevenLabs agent creation can fail (credits, API down)
-        // The agent can be created later from Settings without losing any config
         try {
           await phoneApi.createElevenLabsAgent()
         } catch (e) {
           console.warn('ElevenLabs agent creation skipped:', e)
+        }
+      }
+
+      if (data.whatsappEnabled && data.whatsappVerified && data.metaPhoneNumberId && data.metaAccessToken) {
+        try {
+          await whatsappApi.setupCloudApi(data.metaPhoneNumberId, data.metaAccessToken)
+        } catch (e) {
+          console.warn('WhatsApp Cloud API setup skipped:', e)
         }
       }
 

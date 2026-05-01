@@ -10,6 +10,9 @@ async function bootstrap() {
   app.use(helmet())
   app.enableCors({ origin: process.env.FRONTEND_URL || '*' })
   app.setGlobalPrefix('api')
+
+  // Health check — bypasses global prefix, usado pelo Railway
+  app.getHttpAdapter().get('/health', (_req: any, res: any) => res.json({ ok: true }))
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }))
 
   const config = new DocumentBuilder()

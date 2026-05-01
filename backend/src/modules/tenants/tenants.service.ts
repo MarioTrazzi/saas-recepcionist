@@ -56,6 +56,10 @@ export class TenantsService {
     return this.findById(id)
   }
 
+  async findByMetaPhoneNumberId(phoneNumberId: string) {
+    return this.tenantRepo.findOne({ where: { metaPhoneNumberId: phoneNumberId } })
+  }
+
   async getUserByEmail(email: string) {
     return this.userRepo.findOne({ where: { email }, select: ['id', 'tenantId', 'name', 'email', 'password', 'role'] })
   }
