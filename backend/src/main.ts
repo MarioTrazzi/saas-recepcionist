@@ -8,7 +8,10 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule)
 
   app.use(helmet())
-  app.enableCors({ origin: process.env.FRONTEND_URL || '*' })
+  app.enableCors({
+    origin: [process.env.FRONTEND_URL || '*', 'https://frontend-production-cf0e.up.railway.app'],
+    credentials: true,
+  })
   app.setGlobalPrefix('api')
 
   // Health check — bypasses global prefix, usado pelo Railway
