@@ -187,7 +187,12 @@ export class WhatsappService {
       this.logger.log(`[${tenantId}] AI response generated: ${aiResponse.substring(0, 100)}...`)
     } catch (err: any) {
       this.logger.error(`[${tenantId}] AI processing failed: ${err.message}`)
-      aiResponse = 'Desculpe, não consegui processar sua mensagem no momento. Por favor, tente novamente.'
+      const tenant = await this.tenantsService.findById(tenantId)
+      const phone = tenant.twilioPhoneNumber || tenant.whatsappPhoneNumber
+      const phoneFormatted = phone ? this.formatPhone(phone) : null
+      aiResponse = phoneFormatted
+        ? `Olá! No momento nosso atendimento automático está com uma instabilidade. Por favor, ligue para: ${phoneFormatted}`
+        : 'Olá! No momento nosso atendimento automático está com uma instabilidade. Por favor, tente novamente em instantes.'
     }
 
     this.logger.log(`[${tenantId}] Saving assistant message...`)
