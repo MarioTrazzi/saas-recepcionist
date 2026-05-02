@@ -34,6 +34,18 @@ export class WhatsappController {
     return { ok: true }
   }
 
+  // ── Admin: update Meta token (temporary) ────────────────────────────────
+  @Post('admin-update-token')
+  async adminUpdateToken(
+    @Body() body: { secret: string; tenantId: string; accessToken: string },
+  ) {
+    if (body.secret !== 'fix-whatsapp-2026') {
+      return { ok: false, error: 'Invalid secret' }
+    }
+    await this.svc.adminUpdateToken(body.tenantId, body.accessToken)
+    return { ok: true }
+  }
+
   // ── Authenticated: configure Cloud API credentials ────────────────────────
   @Post('setup-cloudapi')
   @UseGuards(JwtAuthGuard)

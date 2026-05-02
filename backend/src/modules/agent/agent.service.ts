@@ -13,8 +13,15 @@ export class AgentService {
     @InjectRepository(AgentConfig) private configRepo: Repository<AgentConfig>,
     private configService: ConfigService,
   ) {
+    const groqKey = configService.get('GROQ_API_KEY')
     const geminiKey = configService.get('GEMINI_API_KEY')
-    if (geminiKey) {
+
+    if (groqKey) {
+      this.openai = new OpenAI({
+        apiKey: groqKey,
+        baseURL: 'https://api.groq.com/openai/v1',
+      })
+    } else if (geminiKey) {
       this.openai = new OpenAI({
         apiKey: geminiKey,
         baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/',

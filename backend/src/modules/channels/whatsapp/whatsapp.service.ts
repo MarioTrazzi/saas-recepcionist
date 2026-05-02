@@ -20,6 +20,15 @@ export class WhatsappService {
 
   // ── Cloud API setup ────────────────────────────────────────────────────────
 
+  async adminUpdateToken(tenantId: string, accessToken: string) {
+    await this.tenantsService.update(tenantId, {
+      metaAccessToken: accessToken,
+      whatsappError: null,
+      whatsappErrorAt: null,
+    })
+    this.logger.log(`[${tenantId}] Admin updated Meta access token`)
+  }
+
   async setupCloudApi(tenantId: string, phoneNumberId: string, accessToken: string): Promise<{ phoneNumber: string }> {
     // Validate credentials against Meta
     try {
