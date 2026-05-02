@@ -444,6 +444,7 @@ nav.lp-nav.scrolled{
 .uc-detail-wrap{
   overflow:hidden;
   transition:max-height .45s cubic-bezier(.2,.7,.2,1), opacity .35s ease, margin-top .35s ease;
+  position:relative;z-index:2;
 }
 .uc-detail{
   background:linear-gradient(180deg, var(--bg-3), var(--bg-2));
