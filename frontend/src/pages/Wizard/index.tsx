@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CheckCircle, ChevronRight, ChevronLeft, Phone } from 'lucide-react'
 import { StepTemplate } from './steps/StepTemplate'
@@ -7,7 +7,7 @@ import { StepKnowledge } from './steps/StepKnowledge'
 import { StepChannels } from './steps/StepChannels'
 import { StepHandoff } from './steps/StepHandoff'
 import { StepActivate } from './steps/StepActivate'
-import { agentApi, phoneApi, calendarApi, tenantApi, whatsappApi } from '@/lib/api'
+import { agentApi, phoneApi, calendarApi, whatsappApi } from '@/lib/api'
 
 const STEPS = [
   { id: 1, title: 'Template', desc: 'Escolha o tipo de negócio' },
@@ -79,15 +79,6 @@ export default function WizardPage() {
   const [data, setData] = useState<WizardData>(EMPTY)
   const [saving, setSaving] = useState(false)
   const navigate = useNavigate()
-
-  // Pre-connect Google Calendar if user signed in with Google
-  useEffect(() => {
-    tenantApi.getMe().then(tenant => {
-      if (tenant?.googleCalendarConnected) {
-        setData(d => ({ ...d, calendarMode: 'google', googleCalendarConnected: true }))
-      }
-    }).catch(() => {})
-  }, [])
 
   const update = (partial: Partial<WizardData>) => setData(d => ({ ...d, ...partial }))
 

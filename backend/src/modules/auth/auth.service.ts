@@ -29,7 +29,6 @@ export class AuthService {
       scope: [
         'https://www.googleapis.com/auth/userinfo.profile',
         'https://www.googleapis.com/auth/userinfo.email',
-        'https://www.googleapis.com/auth/calendar',
       ],
     })
   }
@@ -56,22 +55,16 @@ export class AuthService {
         password: Math.random().toString(36), // random, never used
         ownerName: name,
       })
-      // Save Google tokens to tenant
+      // Save Google profile info to tenant (no calendar scope at login)
       await this.tenantsService.update(tenant.id, {
-        googleAccessToken: tokens.access_token,
-        googleRefreshToken: tokens.refresh_token || undefined,
         googleEmail: email,
-        googleCalendarConnected: true,
       })
       user = { ...newUser, tenantId: tenant.id } as any
       isNew = true
     } else {
-      // Existing user — update tokens
+      // Existing user — update profile
       await this.tenantsService.update(user.tenantId, {
-        googleAccessToken: tokens.access_token,
-        googleRefreshToken: tokens.refresh_token || undefined,
         googleEmail: email,
-        googleCalendarConnected: true,
       })
     }
 
