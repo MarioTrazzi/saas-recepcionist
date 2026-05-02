@@ -12,31 +12,150 @@ import './Landing.css'
 ───────────────────────────────────────────── */
 
 function VisualTemplate() {
+  const [selected, setSelected] = useState(0)
   const cards = [
-    { emoji: '🏥', label: 'Saúde', name: 'Clínica São Lucas' },
-    { emoji: '🍕', label: 'Alimentação', name: 'Bella Pasta' },
-    { emoji: '🏠', label: 'Imóveis', name: 'Prime Imóveis' },
-    { emoji: '💆', label: 'Estética', name: 'Studio Belle' },
-    { emoji: '🎓', label: 'Educação', name: 'EduCursos' },
-    { emoji: '🔧', label: 'Serviços', name: 'TechFix' },
+    {
+      emoji: '🏥', label: 'Saúde', name: 'Clínica São Lucas', agent: 'Sofia',
+      howItWorks: 'A Sofia entende pedidos de agendamento, verifica a disponibilidade na agenda e confirma automaticamente. Se o paciente perguntar sobre especialidades ou convênios, ela responde com base nas informações cadastradas.',
+      features: ['Agenda consultas com data e hora', 'Informa especialidades e médicos', 'Verifica convênios e planos de saúde', 'Cancela ou reagenda horários'],
+      conversation: [
+        { from: 'user', text: 'Quero marcar com o cardiologista' },
+        { from: 'agent', text: 'Temos terça às 14h ou quarta às 10h. Qual prefere?' },
+      ],
+    },
+    {
+      emoji: '🍕', label: 'Alimentação', name: 'Bella Pasta', agent: 'Bia',
+      howItWorks: 'A Bia conhece todo o cardápio e preços. Ela monta o pedido, calcula o total e pergunta se é delivery ou retirada. Para reservas, verifica disponibilidade e confirma na hora.',
+      features: ['Mostra cardápio completo com preços', 'Aceita pedidos para delivery ou retirada', 'Faz reservas de mesa', 'Indica pratos do dia e promoções'],
+      conversation: [
+        { from: 'user', text: 'Quero uma pizza margherita' },
+        { from: 'agent', text: 'Pizza margherita R$39,90. Delivery ou retirada?' },
+      ],
+    },
+    {
+      emoji: '🏠', label: 'Imóveis', name: 'Prime Imóveis', agent: 'Ana',
+      howItWorks: 'A Ana conhece o portfólio de imóveis e ajuda o cliente a encontrar o que procura. Filtra por região, preço e tipo, e agenda visitas quando o cliente demonstra interesse.',
+      features: ['Apresenta imóveis disponíveis', 'Filtra por região, preço e tipo', 'Agenda visitas presenciais', 'Tira dúvidas sobre financiamento'],
+      conversation: [
+        { from: 'user', text: 'Procuro apê de 2 quartos em SP' },
+        { from: 'agent', text: 'Tenho 3 opções entre R$350k e R$500k. Quer agendar visita?' },
+      ],
+    },
+    {
+      emoji: '💆', label: 'Estética', name: 'Studio Belle', agent: 'Lara',
+      howItWorks: 'A Lara agenda serviços de beleza, informa preços e duração de cada procedimento, e sugere horários disponíveis. Também pode indicar profissionais e combinar serviços.',
+      features: ['Agenda serviços de beleza', 'Informa preços e duração', 'Sugere profissionais disponíveis', 'Combina múltiplos serviços'],
+      conversation: [
+        { from: 'user', text: 'Quero fazer corte e manicure' },
+        { from: 'agent', text: 'Corte R$60 + Manicure R$35. Amanhã às 10h ou 14h?' },
+      ],
+    },
+    {
+      emoji: '🎓', label: 'Educação', name: 'EduCursos', agent: 'Edu',
+      howItWorks: 'O Edu conhece todos os cursos, valores e processos de matrícula. Responde dúvidas, envia informações detalhadas e agenda aulas experimentais para novos alunos.',
+      features: ['Informa cursos e grade curricular', 'Tira dúvidas sobre matrícula', 'Informa valores e pagamento', 'Agenda aulas experimentais'],
+      conversation: [
+        { from: 'user', text: 'Quero saber sobre o curso de Inglês' },
+        { from: 'agent', text: 'Inglês para adultos, R$450/mês. Quer aula experimental gratuita?' },
+      ],
+    },
+    {
+      emoji: '🔧', label: 'Serviços', name: 'TechFix', agent: 'Carlos',
+      howItWorks: 'O Carlos entende o tipo de serviço solicitado, verifica disponibilidade na agenda e agenda automaticamente. Para orçamentos, coleta informações e envia uma estimativa.',
+      features: ['Agenda serviços e visitas técnicas', 'Informa preços e prazos', 'Envia orçamentos estimados', 'Confirma agendamentos'],
+      conversation: [
+        { from: 'user', text: 'Preciso de um encanador' },
+        { from: 'agent', text: 'Temos amanhã às 9h ou 14h. Qual horário funciona melhor?' },
+      ],
+    },
   ]
+
+  const s = cards[selected]
+
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-      {cards.map((c, i) => (
-        <div key={i} style={{
-          background: i === 0 ? 'linear-gradient(135deg,rgba(108,60,225,.2),rgba(0,212,170,.12))' : 'rgba(255,255,255,.03)',
-          border: `1px solid ${i === 0 ? 'rgba(108,60,225,.5)' : 'rgba(255,255,255,.08)'}`,
-          borderRadius: 12, padding: '14px 16px', cursor: 'default',
-          display: 'flex', flexDirection: 'column', gap: 4,
-        }}>
-          <span style={{ fontSize: 22 }}>{c.emoji}</span>
-          <span style={{ fontSize: 10, color: 'var(--accent)', fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase' }}>{c.label}</span>
-          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{c.name}</span>
-          {i === 0 && <span style={{ fontSize: 10, color: 'var(--accent)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
-            <CheckCircle2 style={{ width: 10, height: 10 }} /> Selecionado
-          </span>}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {/* Grid de cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        {cards.map((c, i) => (
+          <button key={i} onClick={() => setSelected(i)} style={{
+            background: i === selected ? 'linear-gradient(135deg,rgba(108,60,225,.2),rgba(0,212,170,.12))' : 'rgba(255,255,255,.03)',
+            border: `1px solid ${i === selected ? 'rgba(108,60,225,.5)' : 'rgba(255,255,255,.08)'}`,
+            borderRadius: 12, padding: '14px 16px', cursor: 'pointer',
+            display: 'flex', flexDirection: 'column', gap: 4,
+            transition: 'all .2s', textAlign: 'left', fontFamily: 'inherit', color: 'inherit',
+            outline: 'none',
+          }}>
+            <span style={{ fontSize: 22 }}>{c.emoji}</span>
+            <span style={{ fontSize: 10, color: 'var(--accent)', fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase' }}>{c.label}</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{c.name}</span>
+            {i === selected && <span style={{ fontSize: 10, color: 'var(--accent)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <CheckCircle2 style={{ width: 10, height: 10 }} /> Ver detalhes
+            </span>}
+          </button>
+        ))}
+      </div>
+
+      {/* Painel de detalhes do template selecionado */}
+      <div style={{
+        background: 'rgba(255,255,255,.03)',
+        border: '1px solid rgba(108,60,225,.3)',
+        borderRadius: 14,
+        padding: '18px 20px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+          <span style={{ fontSize: 24 }}>{s.emoji}</span>
+          <div>
+            <div style={{ fontSize: 10, color: 'var(--accent)', fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase' }}>{s.label}</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>Agente: {s.agent}</div>
+          </div>
         </div>
-      ))}
+
+        <p style={{ fontSize: 12, color: 'var(--text-dim)', lineHeight: 1.6, marginBottom: 12 }}>
+          {s.howItWorks}
+        </p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 14 }}>
+          {s.features.map((f, i) => (
+            <div key={i} style={{ display: 'flex', gap: 6, fontSize: 11, color: 'var(--text-dim)', alignItems: 'center' }}>
+              <CheckCircle2 style={{ width: 10, height: 10, color: 'var(--accent)', flexShrink: 0 }} />
+              {f}
+            </div>
+          ))}
+        </div>
+
+        {/* Mini chat */}
+        <div style={{
+          background: 'rgba(0,0,0,.2)',
+          borderRadius: 10,
+          padding: '12px 14px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 8,
+        }}>
+          {s.conversation.map((msg, i) => (
+            <div key={i} style={{
+              maxWidth: '85%',
+              padding: '8px 12px',
+              borderRadius: 12,
+              fontSize: 11,
+              lineHeight: 1.5,
+              alignSelf: msg.from === 'agent' ? 'flex-start' : 'flex-end',
+              background: msg.from === 'agent'
+                ? 'linear-gradient(135deg, rgba(108,60,225,.18), rgba(0,212,170,.10))'
+                : 'rgba(255,255,255,.06)',
+              border: `1px solid ${msg.from === 'agent' ? 'rgba(108,60,225,.3)' : 'rgba(255,255,255,.08)'}`,
+              color: msg.from === 'agent' ? 'var(--text)' : 'var(--text-dim)',
+              borderBottomLeftRadius: msg.from === 'agent' ? 4 : 12,
+              borderBottomRightRadius: msg.from === 'agent' ? 12 : 4,
+            }}>
+              <span style={{ fontSize: 9, letterSpacing: '.1em', textTransform: 'uppercase', opacity: .6, display: 'block', marginBottom: 2, fontWeight: 600 }}>
+                {msg.from === 'agent' ? s.agent : 'Cliente'}
+              </span>
+              {msg.text}
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }
