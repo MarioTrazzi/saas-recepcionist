@@ -380,7 +380,7 @@ export function StepChannels({ data, update, onNext, onBack }: Props) {
                     </div>
                     {data.evolutionVerified
                       ? <span className="flex items-center gap-1.5 text-xs text-green-400 font-semibold"><CheckCircle className="h-3.5 w-3.5" /> Conectado</span>
-                      : data.evolutionEnabled && <span className="text-xs text-gray-500">Configurar →</span>
+                      : data.evolutionFallbackEnabled && <span className="text-xs text-gray-500">Configurar →</span>
                     }
                   </div>
                   <p className="text-sm text-gray-400 mt-1">
