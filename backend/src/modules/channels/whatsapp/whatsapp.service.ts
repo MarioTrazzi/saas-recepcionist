@@ -152,21 +152,38 @@ export class WhatsappService {
 
     let conversation = await this.conversationsService.getByExternalId(conversationId)
     if (!conversation) {
+      this.logger.log(`[${tenantId}] Creating new conversation: ${conversationId}`)
       conversation = await this.conversationsService.startConversation({
         tenantId,
         channel: 'whatsapp',
         externalId: conversationId,
         contactPhone: from,
       })
+      this.logger.log(`[${tenantId}] Conversation created: ${conversation.id}`)
+    } else {
+      this.logger.log(`[${tenantId}] Found existing conversation: ${conversation.id}`)
     }
 
+    this.logger.log(`[${tenantId}] Saving user message...`)
     await this.conversationsService.addMessage(conversationId, 'user', message)
+    this.logger.log(`[${tenantId}] User message saved`)
+
     const history = await this.conversationsService.getHistory(conversation.id)
+    this.logger.log(`[${tenantId}] History loaded: ${history.length} messages`)
 
-    const knowledgeContext = await this.knowledgeService.searchRelevant(tenantId, message)
-    const aiResponse = await this.agentService.processMessage(tenantId, message, history, knowledgeContext)
+    let aiResponse: string
+    try {
+      const knowledgeContext = await this.knowledgeService.searchRelevant(tenantId, message)
+      aiResponse = await this.agentService.processMessage(tenantId, message, history, knowledgeContext)
+      this.logger.log(`[${tenantId}] AI response generated: ${aiResponse.substring(0, 100)}...`)
+    } catch (err: any) {
+      this.logger.error(`[${tenantId}] AI processing failed: ${err.message}`)
+      aiResponse = 'Desculpe, não consegui processar sua mensagem no momento. Por favor, tente novamente.'
+    }
 
+    this.logger.log(`[${tenantId}] Saving assistant message...`)
     await this.conversationsService.addMessage(conversationId, 'assistant', aiResponse)
+    this.logger.log(`[${tenantId}] Assistant message saved`)
 
     const shouldHandoff = await this.agentService.detectHandoffIntent(message)
     if (shouldHandoff) {
@@ -177,7 +194,9 @@ export class WhatsappService {
       }
     }
 
+    this.logger.log(`[${tenantId}] Sending WhatsApp response...`)
     await this.sendMessage(tenantId, from, aiResponse, conversationId)
+    this.logger.log(`[${tenantId}] WhatsApp response sent`)
   }
 
   // ── Send message — Cloud API with Evolution API fallback ──────────────────
