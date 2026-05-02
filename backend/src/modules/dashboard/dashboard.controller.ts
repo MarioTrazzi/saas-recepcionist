@@ -32,6 +32,7 @@ export class DashboardController {
         whatsappPhone: tenant.whatsappPhoneNumber ?? null,
         whatsappError: tenant.whatsappError ?? null,
         whatsappErrorAt: tenant.whatsappErrorAt ?? null,
+        unansweredMessages: tenant.unansweredMessages ?? [],
         minutesUsed: tenant.minutesUsedThisMonth,
         minutesLimit: tenant.minutesLimitPerMonth,
         usagePercent: Math.round((tenant.minutesUsedThisMonth / tenant.minutesLimitPerMonth) * 100),

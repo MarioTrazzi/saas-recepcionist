@@ -123,6 +123,52 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* Unanswered messages due to WhatsApp credit exhaustion */}
+      {tenant?.unansweredMessages?.length > 0 && (
+        <div className="card border-orange-500/25 bg-orange-500/5 mb-6 overflow-hidden">
+          <div className="flex items-center gap-3 px-5 pt-4 pb-3 border-b border-orange-500/15">
+            <AlertTriangle className="h-4 w-4 text-orange-400 flex-shrink-0" />
+            <p className="text-sm font-medium text-orange-300">
+              {tenant.unansweredMessages.length === 1
+                ? '1 mensagem não respondida por falta de créditos'
+                : `${tenant.unansweredMessages.length} mensagens não respondidas por falta de créditos`}
+            </p>
+          </div>
+          <div className="divide-y divide-gray-800/60">
+            {tenant.unansweredMessages.slice(0, 5).map((msg: any, i: number) => (
+              <Link
+                key={i}
+                to={`/app/conversations?phone=${msg.phone}`}
+                className="flex items-center gap-4 px-5 py-3.5 hover:bg-orange-500/5 transition-colors"
+              >
+                <div className="h-8 w-8 rounded-full bg-orange-500/10 flex items-center justify-center flex-shrink-0">
+                  <MessageSquare className="h-4 w-4 text-orange-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-200">
+                    Mensagem não respondida de: {formatPhone(msg.phone)}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5 truncate">{msg.message}</p>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <p className="text-xs text-gray-500">
+                    {new Date(msg.receivedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                  <p className="text-xs text-orange-400 mt-0.5">Ver conversa</p>
+                </div>
+              </Link>
+            ))}
+            {tenant.unansweredMessages.length > 5 && (
+              <div className="px-5 py-3 text-center">
+                <Link to="/app/conversations" className="text-xs text-orange-400 hover:text-orange-300 transition-colors">
+                  Ver todas as {tenant.unansweredMessages.length} mensagens →
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Stats grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <StatCard icon={MessageSquare} label="Total de conversas" value={conversations?.total ?? 0} color="primary" />

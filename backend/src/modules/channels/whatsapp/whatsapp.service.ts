@@ -172,17 +172,17 @@ export class WhatsappService {
     if (shouldHandoff) {
       const cfg = await this.agentService.getConfig(tenantId)
       if (cfg.handoffWhatsapp) {
-        await this.sendMessage(tenantId, from, 'Vou conectar você com um de nossos atendentes. Um momento...')
+        await this.sendMessage(tenantId, from, 'Vou conectar você com um de nossos atendentes. Um momento...', conversationId)
         return
       }
     }
 
-    await this.sendMessage(tenantId, from, aiResponse)
+    await this.sendMessage(tenantId, from, aiResponse, conversationId)
   }
 
   // ── Send message — Cloud API with Evolution API fallback ──────────────────
 
-  async sendMessage(tenantId: string, to: string, text: string) {
+  async sendMessage(tenantId: string, to: string, text: string, conversationId?: string) {
     const tenant = await this.tenantsService.findById(tenantId)
 
     // Try Cloud API first (official Meta integration)
@@ -213,7 +213,10 @@ export class WhatsappService {
           }
         }
 
-        // Both failed — send fallback message via Evolution API (if available)
+        // Both failed — save unanswered message for dashboard alert
+        await this.saveUnansweredMessage(tenantId, to, text, conversationId)
+
+        // Try to send fallback message via Evolution API (if available)
         await this.sendFallbackMessage(tenant, to)
         throw err
       }
@@ -226,6 +229,24 @@ export class WhatsappService {
     }
 
     throw new Error('WhatsApp not configured for this tenant')
+  }
+
+  private async saveUnansweredMessage(tenantId: string, phone: string, message: string, conversationId?: string) {
+    const tenant = await this.tenantsService.findById(tenantId)
+    const unanswered = tenant.unansweredMessages || []
+
+    // Add new unanswered message (keep last 50)
+    unanswered.unshift({
+      phone,
+      message: message.substring(0, 100), // Truncate for storage
+      receivedAt: new Date().toISOString(),
+      conversationId: conversationId || `wa_${tenantId}_${phone}`,
+    })
+
+    // Keep only last 50 messages
+    const trimmed = unanswered.slice(0, 50)
+    await this.tenantsService.update(tenantId, { unansweredMessages: trimmed })
+    this.logger.warn(`[${tenantId}] Unanswered message saved for ${phone}`)
   }
 
   private async sendFallbackMessage(tenant: any, to: string) {

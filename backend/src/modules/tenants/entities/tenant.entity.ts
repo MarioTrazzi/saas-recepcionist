@@ -89,6 +89,10 @@ export class Tenant {
   @Column({ type: 'timestamp', nullable: true })
   whatsappErrorAt: Date
 
+  // Unanswered messages due to WhatsApp credit exhaustion
+  @Column({ type: 'jsonb', nullable: true })
+  unansweredMessages: Array<{ phone: string; message: string; receivedAt: string; conversationId: string }>
+
   // Google OAuth — stored at login, reused for Calendar
   @Column({ nullable: true })
   googleAccessToken: string
