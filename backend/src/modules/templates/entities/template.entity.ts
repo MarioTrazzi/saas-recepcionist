@@ -15,7 +15,7 @@ export class Template {
   @PrimaryGeneratedColumn('uuid')
   id: string
 
-  @Column({ type: 'enum', enum: TemplateCategory })
+  @Column({ type: 'enum', enum: TemplateCategory, enumName: 'TemplateCategory' })
   category: TemplateCategory
 
   @Column()

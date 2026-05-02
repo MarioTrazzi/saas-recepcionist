@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common'
+import { Injectable, OnModuleInit, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { Template, TemplateCategory } from './entities/template.entity'
@@ -86,14 +86,21 @@ Seja animada e faça o cliente sentir vontade de pedir!`,
 
 @Injectable()
 export class TemplatesService implements OnModuleInit {
+  private readonly logger = new Logger(TemplatesService.name)
+
   constructor(
     @InjectRepository(Template) private repo: Repository<Template>,
   ) {}
 
   async onModuleInit() {
-    const count = await this.repo.count()
-    if (count === 0) {
-      await this.repo.save(SEED_TEMPLATES.map(t => this.repo.create(t)))
+    try {
+      const count = await this.repo.count()
+      if (count === 0) {
+        await this.repo.save(SEED_TEMPLATES.map(t => this.repo.create(t)))
+        this.logger.log('Templates seeded successfully')
+      }
+    } catch (err) {
+      this.logger.warn('Templates table not ready yet, skipping seed. It will be created by synchronize.')
     }
   }
 
