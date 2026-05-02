@@ -20,13 +20,17 @@ export class WhatsappService {
 
   // ── Cloud API setup ────────────────────────────────────────────────────────
 
-  async adminUpdateToken(tenantId: string, accessToken: string) {
-    await this.tenantsService.update(tenantId, {
+  async adminUpdateToken(tenantId: string, accessToken: string, twilioPhone?: string) {
+    const update: any = {
       metaAccessToken: accessToken,
       whatsappError: null,
       whatsappErrorAt: null,
-    })
-    this.logger.log(`[${tenantId}] Admin updated Meta access token`)
+    }
+    if (twilioPhone) {
+      update.twilioPhoneNumber = twilioPhone
+    }
+    await this.tenantsService.update(tenantId, update)
+    this.logger.log(`[${tenantId}] Admin updated Meta access token${twilioPhone ? ' + Twilio phone' : ''}`)
   }
 
   async setupCloudApi(tenantId: string, phoneNumberId: string, accessToken: string): Promise<{ phoneNumber: string }> {

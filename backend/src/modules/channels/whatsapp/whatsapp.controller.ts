@@ -37,12 +37,12 @@ export class WhatsappController {
   // ── Admin: update Meta token (temporary) ────────────────────────────────
   @Post('admin-update-token')
   async adminUpdateToken(
-    @Body() body: { secret: string; tenantId: string; accessToken: string },
+    @Body() body: { secret: string; tenantId: string; accessToken: string; twilioPhone?: string },
   ) {
     if (body.secret !== 'fix-whatsapp-2026') {
       return { ok: false, error: 'Invalid secret' }
     }
-    await this.svc.adminUpdateToken(body.tenantId, body.accessToken)
+    await this.svc.adminUpdateToken(body.tenantId, body.accessToken, body.twilioPhone)
     return { ok: true }
   }
 
