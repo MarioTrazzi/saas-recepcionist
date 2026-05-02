@@ -54,6 +54,8 @@ export const phoneApi = {
 export const whatsappApi = {
   setupCloudApi: (phoneNumberId: string, accessToken: string) =>
     api.post('/whatsapp/setup-cloudapi', { phoneNumberId, accessToken }).then(r => r.data),
+  setupEvolutionFallback: (evolutionApiUrl: string, evolutionApiKey: string, phoneNumber: string) =>
+    api.post('/whatsapp/setup-evolution-fallback', { evolutionApiUrl, evolutionApiKey, phoneNumber }).then(r => r.data),
   status: () => api.get('/whatsapp/status').then(r => r.data),
   // kept for backward compat
   setup: (phoneNumber: string) => api.post('/whatsapp/setup', { phoneNumber }).then(r => r.data),

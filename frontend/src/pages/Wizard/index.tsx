@@ -33,6 +33,11 @@ export interface WizardData {
   metaPhoneNumberId: string
   metaAccessToken: string
   whatsappVerified: boolean
+  evolutionFallbackEnabled: boolean
+  evolutionApiUrl: string
+  evolutionApiKey: string
+  evolutionPhone: string
+  evolutionVerified: boolean
   handoffMode: string
   handoffPhone: string
   handoffWhatsapp: string
@@ -56,6 +61,11 @@ const EMPTY: WizardData = {
   metaPhoneNumberId: '',
   metaAccessToken: '',
   whatsappVerified: false,
+  evolutionFallbackEnabled: false,
+  evolutionApiUrl: '',
+  evolutionApiKey: '',
+  evolutionPhone: '',
+  evolutionVerified: false,
   handoffMode: 'none',
   handoffPhone: '',
   handoffWhatsapp: '',

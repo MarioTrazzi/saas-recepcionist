@@ -46,6 +46,65 @@ export class WhatsappService {
     }
   }
 
+  // ── Evolution API fallback setup ──────────────────────────────────────────
+
+  async setupEvolutionFallback(tenantId: string, evolutionApiUrl: string, evolutionApiKey: string, phoneNumber: string): Promise<{ instanceName: string; qrCode: string }> {
+    // Validate Evolution API connection
+    try {
+      await axios.get(`${evolutionApiUrl}/instance/fetchInstances`, {
+        headers: { apikey: evolutionApiKey },
+        timeout: 10000,
+      })
+    } catch (err: any) {
+      throw new BadRequestException('Não foi possível conectar à Evolution API. Verifique a URL e a chave.')
+    }
+
+    // Create instance
+    const instanceName = `tenant_${tenantId.slice(0, 8)}_fallback`
+    const headers = { apikey: evolutionApiKey }
+
+    try {
+      // Delete existing instance if any
+      try {
+        await axios.delete(`${evolutionApiUrl}/instance/delete/${instanceName}`, { headers, timeout: 8000 })
+        await new Promise(resolve => setTimeout(resolve, 1000))
+      } catch { /* instance didn't exist */ }
+
+      const response = await axios.post(
+        `${evolutionApiUrl}/instance/create`,
+        {
+          instanceName,
+          qrcode: true,
+          integration: 'WHATSAPP-BAILEYS',
+          webhook: {
+            url: `${this.config.get('BACKEND_PUBLIC_URL') || this.config.get('BACKEND_URL')}/api/whatsapp/webhook/${tenantId}`,
+            enabled: true,
+            events: ['MESSAGES_UPSERT'],
+          },
+        },
+        { headers, timeout: 15000 },
+      )
+
+      await this.tenantsService.update(tenantId, {
+        evolutionApiUrl,
+        evolutionApiKey,
+        whatsappInstanceName: instanceName,
+      })
+
+      let qrCode = response.data.qrcode?.base64 || ''
+      if (!qrCode) qrCode = await this.pollForQrCode(evolutionApiUrl, instanceName, headers)
+
+      this.logger.log(`[${tenantId}] Evolution API fallback configured: ${instanceName}`)
+      return { instanceName, qrCode }
+    } catch (err: any) {
+      if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND') {
+        throw new ServiceUnavailableException('Não foi possível conectar à Evolution API.')
+      }
+      const msg = err.response?.data?.response?.message?.[0] || err.response?.data?.message || err.message
+      throw new ServiceUnavailableException(`Evolution API: ${msg}`)
+    }
+  }
+
   // ── Meta webhook verification (GET) ───────────────────────────────────────
 
   verifyWebhook(mode: string, token: string, challenge: string): string {
@@ -121,18 +180,90 @@ export class WhatsappService {
     await this.sendMessage(tenantId, from, aiResponse)
   }
 
-  // ── Send message — Cloud API or Baileys ───────────────────────────────────
+  // ── Send message — Cloud API with Evolution API fallback ──────────────────
 
   async sendMessage(tenantId: string, to: string, text: string) {
     const tenant = await this.tenantsService.findById(tenantId)
 
+    // Try Cloud API first (official Meta integration)
     if (tenant.metaPhoneNumberId && tenant.metaAccessToken) {
-      await this.sendCloudApiMessage(tenant.metaPhoneNumberId, tenant.metaAccessToken, to, text)
-    } else if (tenant.whatsappInstanceName) {
-      await this.sendBaileysMessage(tenant.whatsappInstanceName, to, text)
-    } else {
-      throw new Error('WhatsApp not configured for this tenant')
+      try {
+        await this.sendCloudApiMessage(tenant.metaPhoneNumberId, tenant.metaAccessToken, to, text)
+        // Clear any previous error on success
+        if (tenant.whatsappError) {
+          await this.tenantsService.update(tenantId, { whatsappError: null, whatsappErrorAt: null })
+        }
+        return
+      } catch (err: any) {
+        const msg = err.response?.data?.error?.message || err.message || 'Erro desconhecido'
+        this.logger.error(`[${tenantId}] Cloud API failed: ${msg}`)
+        await this.tenantsService.update(tenantId, { whatsappError: msg, whatsappErrorAt: new Date() })
+
+        // Try Evolution API fallback (doesn't consume Meta credits)
+        if (tenant.evolutionApiUrl && tenant.evolutionApiKey && tenant.whatsappInstanceName) {
+          try {
+            this.logger.log(`[${tenantId}] Trying Evolution API fallback...`)
+            await this.sendBaileysMessage(tenant.evolutionApiUrl, tenant.evolutionApiKey, tenant.whatsappInstanceName, to, text)
+            this.logger.log(`[${tenantId}] Message sent via Evolution API fallback`)
+            // Clear error since fallback worked
+            await this.tenantsService.update(tenantId, { whatsappError: null, whatsappErrorAt: null })
+            return
+          } catch (fallbackErr: any) {
+            this.logger.error(`[${tenantId}] Evolution API fallback also failed: ${fallbackErr.message}`)
+          }
+        }
+
+        // Both failed — send fallback message via Evolution API (if available)
+        await this.sendFallbackMessage(tenant, to)
+        throw err
+      }
     }
+
+    // Evolution API as primary (if no Cloud API configured)
+    if (tenant.evolutionApiUrl && tenant.evolutionApiKey && tenant.whatsappInstanceName) {
+      await this.sendBaileysMessage(tenant.evolutionApiUrl, tenant.evolutionApiKey, tenant.whatsappInstanceName, to, text)
+      return
+    }
+
+    throw new Error('WhatsApp not configured for this tenant')
+  }
+
+  private async sendFallbackMessage(tenant: any, to: string) {
+    const phone = tenant.twilioPhoneNumber || tenant.whatsappPhoneNumber
+    const phoneFormatted = phone ? ` ${this.formatPhone(phone)}` : ''
+    const fallbackText = `Olá! Estamos com uma instabilidade temporária no atendimento por WhatsApp.${phoneFormatted ? `\n\nPara falar conosco, ligue para: ${phoneFormatted}` : '\n\nPor favor, tente novamente em instantes ou entre em contato por telefone.'}`
+
+    // Try Evolution API first (doesn't consume Meta credits)
+    if (tenant.evolutionApiUrl && tenant.evolutionApiKey && tenant.whatsappInstanceName) {
+      try {
+        await this.sendBaileysMessage(tenant.evolutionApiUrl, tenant.evolutionApiKey, tenant.whatsappInstanceName, to, fallbackText)
+        this.logger.log(`[${tenant.id}] Fallback message sent via Evolution API to ${to}`)
+        return
+      } catch {
+        this.logger.warn(`[${tenant.id}] Evolution API fallback failed`)
+      }
+    }
+
+    // Try Cloud API as last resort (might fail if credits exhausted)
+    if (tenant.metaPhoneNumberId && tenant.metaAccessToken) {
+      try {
+        await this.sendCloudApiMessage(tenant.metaPhoneNumberId, tenant.metaAccessToken, to, fallbackText)
+        this.logger.log(`[${tenant.id}] Fallback message sent via Cloud API to ${to}`)
+      } catch {
+        this.logger.warn(`[${tenant.id}] Could not send fallback message to ${to}`)
+      }
+    }
+  }
+
+  private formatPhone(raw: string): string {
+    const digits = raw.replace(/\D/g, '')
+    if (digits.startsWith('55') && digits.length === 13) {
+      return `+55 (${digits.slice(2, 4)}) ${digits.slice(4, 9)}-${digits.slice(9)}`
+    }
+    if (digits.startsWith('1') && digits.length === 11) {
+      return `+1 (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`
+    }
+    return raw
   }
 
   private async sendCloudApiMessage(phoneNumberId: string, accessToken: string, to: string, text: string) {
@@ -148,9 +279,7 @@ export class WhatsappService {
     )
   }
 
-  private async sendBaileysMessage(instanceName: string, to: string, text: string) {
-    const evolutionUrl = this.config.get('EVOLUTION_API_URL')
-    const apiKey = this.config.get('EVOLUTION_API_KEY')
+  private async sendBaileysMessage(evolutionUrl: string, apiKey: string, instanceName: string, to: string, text: string) {
     await axios.post(
       `${evolutionUrl}/message/sendText/${instanceName}`,
       { number: to, text },
@@ -160,8 +289,10 @@ export class WhatsappService {
 
   // ── Status ────────────────────────────────────────────────────────────────
 
-  async checkStatus(tenantId: string): Promise<{ connected: boolean; state: string; mode: 'cloud-api' | 'baileys' | 'none' }> {
+  async checkStatus(tenantId: string): Promise<{ connected: boolean; state: string; mode: 'cloud-api' | 'baileys' | 'none'; fallbackConfigured: boolean }> {
     const tenant = await this.tenantsService.findById(tenantId)
+
+    const fallbackConfigured = !!(tenant.evolutionApiUrl && tenant.evolutionApiKey && tenant.whatsappInstanceName)
 
     if (tenant.metaPhoneNumberId && tenant.metaAccessToken) {
       // Verify Cloud API credentials are still valid
@@ -173,23 +304,20 @@ export class WhatsappService {
             timeout: 8000,
           },
         )
-        return { connected: true, state: 'open', mode: 'cloud-api' }
+        return { connected: true, state: 'open', mode: 'cloud-api', fallbackConfigured }
       } catch {
-        return { connected: false, state: 'error', mode: 'cloud-api' }
+        return { connected: false, state: 'error', mode: 'cloud-api', fallbackConfigured }
       }
     }
 
-    if (tenant.whatsappInstanceName) {
-      return { ...await this.checkBaileysStatus(tenant.whatsappInstanceName), mode: 'baileys' }
+    if (tenant.evolutionApiUrl && tenant.evolutionApiKey && tenant.whatsappInstanceName) {
+      return { ...await this.checkBaileysStatus(tenant.evolutionApiUrl, tenant.evolutionApiKey, tenant.whatsappInstanceName), mode: 'baileys', fallbackConfigured }
     }
 
-    return { connected: false, state: 'no_instance', mode: 'none' }
+    return { connected: false, state: 'no_instance', mode: 'none', fallbackConfigured }
   }
 
-  private async checkBaileysStatus(instanceName: string): Promise<{ connected: boolean; state: string }> {
-    const evolutionUrl = this.config.get('EVOLUTION_API_URL')
-    const apiKey = this.config.get('EVOLUTION_API_KEY')
-    if (!evolutionUrl || evolutionUrl.includes('placeholder')) return { connected: false, state: 'not_configured' }
+  private async checkBaileysStatus(evolutionUrl: string, apiKey: string, instanceName: string): Promise<{ connected: boolean; state: string }> {
     try {
       const { data } = await axios.get(
         `${evolutionUrl}/instance/connectionState/${instanceName}`,
@@ -244,6 +372,8 @@ export class WhatsappService {
         whatsappChannelEnabled: false,
         metaPhoneNumberId: null,
         metaAccessToken: null,
+        evolutionApiUrl: evolutionUrl,
+        evolutionApiKey: apiKey,
       })
 
       let qrCode = response.data.qrcode?.base64 || ''

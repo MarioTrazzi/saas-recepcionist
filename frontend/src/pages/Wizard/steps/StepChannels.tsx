@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import {
   ChevronRight, ChevronLeft, Phone, MessageSquare, CheckCircle,
   AlertCircle, Loader2, ExternalLink, Copy, Check, KeyRound,
+  Shield, Zap, Star,
 } from 'lucide-react'
 import { WizardData } from '../index'
 import { whatsappApi, phoneApi } from '@/lib/api'
@@ -36,6 +37,9 @@ function CopyButton({ text }: { text: string }) {
 export function StepChannels({ data, update, onNext, onBack }: Props) {
   const [verifying, setVerifying] = useState(false)
   const [verifyError, setVerifyError] = useState('')
+  const [evolutionVerifying, setEvolutionVerifying] = useState(false)
+  const [evolutionVerifyError, setEvolutionVerifyError] = useState('')
+  const [evolutionQrCode, setEvolutionQrCode] = useState('')
 
   const webhookUrl = `${window.location.origin.replace('5173', '3001')}/api/whatsapp/meta-webhook`
   const verifyToken = 'ai-receptionist-verify-2024'
@@ -59,6 +63,23 @@ export function StepChannels({ data, update, onNext, onBack }: Props) {
       update({ whatsappVerified: false })
     } finally {
       setVerifying(false)
+    }
+  }
+
+  const handleEvolutionVerify = async () => {
+    if (!data.evolutionApiUrl || !data.evolutionApiKey || !data.evolutionPhone) return
+    setEvolutionVerifying(true)
+    setEvolutionVerifyError('')
+    setEvolutionQrCode('')
+    try {
+      const result = await whatsappApi.setupEvolutionFallback(data.evolutionApiUrl, data.evolutionApiKey, data.evolutionPhone)
+      setEvolutionQrCode(result.qrCode || '')
+      update({ evolutionVerified: true })
+    } catch (e: any) {
+      setEvolutionVerifyError(e?.response?.data?.message || 'Não foi possível conectar. Verifique a URL e a chave da API.')
+      update({ evolutionVerified: false })
+    } finally {
+      setEvolutionVerifying(false)
     }
   }
 
@@ -198,7 +219,14 @@ export function StepChannels({ data, update, onNext, onBack }: Props) {
                   <span className="flex-shrink-0 h-5 w-5 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center text-[10px] font-bold mt-0.5">3</span>
                   <div className="flex-1 text-sm text-gray-400">
                     <p className="text-gray-200 font-medium mb-2">Configure o webhook no Meta</p>
-                    <p className="text-xs mb-2">Em <strong className="text-gray-200">WhatsApp → Configuração → Webhooks</strong>, cole estes valores:</p>
+                    <p className="text-xs mb-2">No painel do Meta Developers:</p>
+                    <ol className="text-xs space-y-1.5 mb-3 list-decimal list-inside">
+                      <li>Vá em <strong className="text-gray-200">WhatsApp → Configuração → Webhooks</strong></li>
+                      <li>Clique em <strong className="text-gray-200">Assinar webhook</strong> (ou "Configure a webhook")</li>
+                      <li>Cole a URL e o token abaixo</li>
+                      <li>Confirme — o Meta vai testar a conexão</li>
+                      <li>Após confirmar, assine o evento <strong className="text-gray-200">messages</strong></li>
+                    </ol>
                     <div className="space-y-2">
                       <div className="rounded-lg bg-gray-900 border border-gray-700 px-3 py-2">
                         <p className="text-[10px] text-gray-500 mb-1">URL do webhook</p>
@@ -214,8 +242,48 @@ export function StepChannels({ data, update, onNext, onBack }: Props) {
                           <CopyButton text={verifyToken} />
                         </div>
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => navigator.clipboard.writeText(`URL: ${webhookUrl}\nToken: ${verifyToken}`)}
+                        className="w-full flex items-center justify-center gap-2 text-xs font-medium text-green-400 bg-green-500/10 hover:bg-green-500/20 border border-green-500/25 rounded-lg px-3 py-2 transition-colors"
+                      >
+                        <Copy className="h-3.5 w-3.5" /> Copiar tudo (URL + Token)
+                      </button>
                     </div>
-                    <p className="text-xs mt-2">Assine o evento <strong className="text-gray-200">messages</strong>.</p>
+                    <p className="text-xs mt-2 text-yellow-400/80">Importante: sem assinar o evento <strong>messages</strong>, o agente não recebe mensagens.</p>
+                  </div>
+                </li>
+
+                {/* Pricing info */}
+                <li className="flex gap-3">
+                  <span className="flex-shrink-0 h-5 w-5 rounded-full bg-yellow-500/20 text-yellow-400 flex items-center justify-center text-[10px] font-bold mt-0.5">!</span>
+                  <div className="flex-1 text-sm text-gray-400">
+                    <p className="text-gray-200 font-medium mb-2">Custos da API do WhatsApp</p>
+                    <div className="rounded-lg bg-gray-900 border border-gray-700 p-3 space-y-2 text-xs">
+                      <p><strong className="text-green-400">Grátis:</strong> 1.000 conversas/mês incluídas pela Meta.</p>
+                      <p>Após esse limite, é necessário <strong className="text-gray-200">cadastrar um cartão de crédito</strong> no painel do Meta Business.</p>
+                      <div className="border-t border-gray-700 pt-2 mt-2">
+                        <p className="text-gray-300 font-medium mb-1">Estimativa de custos (Brasil):</p>
+                        <div className="grid grid-cols-3 gap-2 text-center">
+                          <div className="rounded-lg bg-gray-800 p-2">
+                            <p className="text-gray-500 text-[10px]">3.000 msgs</p>
+                            <p className="text-white font-semibold">~$0</p>
+                            <p className="text-gray-500 text-[10px]">plano gratuito</p>
+                          </div>
+                          <div className="rounded-lg bg-gray-800 p-2">
+                            <p className="text-gray-500 text-[10px]">7.000 msgs</p>
+                            <p className="text-white font-semibold">~$15/mês</p>
+                            <p className="text-gray-500 text-[10px]">~R$75</p>
+                          </div>
+                          <div className="rounded-lg bg-gray-800 p-2">
+                            <p className="text-gray-500 text-[10px]">15.000 msgs</p>
+                            <p className="text-white font-semibold">~$40/mês</p>
+                            <p className="text-gray-500 text-[10px]">~R$200</p>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-gray-500 text-[10px]">* Conversas de serviço (respostas a clientes) são as mais baratas. Valores podem variar.</p>
+                    </div>
                   </div>
                 </li>
 
@@ -288,6 +356,144 @@ export function StepChannels({ data, update, onNext, onBack }: Props) {
                 Alterar
               </button>
             </div>
+          </div>
+        )}
+
+        {/* ── Evolution API Fallback (Optional) ── */}
+        {data.whatsappEnabled && data.whatsappVerified && (
+          <div className="pl-2 mt-4">
+            <button
+              onClick={() => update({ evolutionFallbackEnabled: !data.evolutionFallbackEnabled, evolutionVerified: false })}
+              className={`card p-5 w-full text-left transition-all hover:border-gray-700 ${data.evolutionFallbackEnabled ? 'border-blue-500 ring-1 ring-blue-500/50' : ''}`}
+            >
+              <div className="flex items-start gap-4">
+                <div className={`h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0 ${data.evolutionFallbackEnabled ? 'bg-blue-600' : 'bg-gray-800'}`}>
+                  <Shield className="h-5 w-5 text-white" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-white">Fallback Evolution API</h3>
+                      <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+                        <Star className="h-3 w-3" /> PRO
+                      </span>
+                    </div>
+                    {data.evolutionVerified
+                      ? <span className="flex items-center gap-1.5 text-xs text-green-400 font-semibold"><CheckCircle className="h-3.5 w-3.5" /> Conectado</span>
+                      : data.evolutionEnabled && <span className="text-xs text-gray-500">Configurar →</span>
+                    }
+                  </div>
+                  <p className="text-sm text-gray-400 mt-1">
+                    Quando os créditos da Meta acabarem, o agente continua respondendo via Evolution API.
+                    <strong className="text-gray-300"> Não consome créditos da Meta.</strong>
+                  </p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Zap className="h-3.5 w-3.5 text-yellow-400" />
+                    <span className="text-xs text-yellow-400/80">Recomendado para evitar interrupções no atendimento</span>
+                  </div>
+                </div>
+              </div>
+            </button>
+
+            {/* Evolution API configuration */}
+            {data.evolutionFallbackEnabled && !data.evolutionVerified && (
+              <div className="pl-2 mt-3 space-y-3">
+                <div className="card p-5 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <KeyRound className="h-4 w-4 text-blue-400" />
+                    <p className="text-sm font-semibold text-white">Configure a Evolution API</p>
+                  </div>
+
+                  <div className="rounded-lg bg-blue-500/10 border border-blue-500/25 p-3">
+                    <p className="text-xs text-blue-300">
+                      A Evolution API é uma alternativa ao WhatsApp Business API oficial. Ela usa o protocolo WhatsApp Web (Baileys) e <strong>não consome créditos da Meta</strong>.
+                      Configure sua própria instância ou use um serviço hospedado.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="text-xs text-gray-400 block mb-1">URL da Evolution API</label>
+                    <input
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 font-mono placeholder-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 outline-none"
+                      placeholder="https://sua-evolution-api.com"
+                      value={data.evolutionApiUrl}
+                      onChange={e => update({ evolutionApiUrl: e.target.value.trim(), evolutionVerified: false })}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs text-gray-400 block mb-1">API Key</label>
+                    <input
+                      type="password"
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 font-mono placeholder-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 outline-none"
+                      placeholder="Sua chave de API"
+                      value={data.evolutionApiKey}
+                      onChange={e => update({ evolutionApiKey: e.target.value.trim(), evolutionVerified: false })}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs text-gray-400 block mb-1">Número de telefone (com código do país)</label>
+                    <input
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 font-mono placeholder-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 outline-none"
+                      placeholder="5511999999999"
+                      value={data.evolutionPhone}
+                      onChange={e => update({ evolutionPhone: e.target.value.trim(), evolutionVerified: false })}
+                    />
+                  </div>
+
+                  {evolutionVerifyError && (
+                    <div className="flex items-start gap-2 text-xs text-red-400">
+                      <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
+                      {evolutionVerifyError}
+                    </div>
+                  )}
+
+                  <button
+                    onClick={handleEvolutionVerify}
+                    disabled={evolutionVerifying || !data.evolutionApiUrl || !data.evolutionApiKey || !data.evolutionPhone}
+                    className="btn-secondary flex items-center gap-2 text-sm py-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {evolutionVerifying
+                      ? <><Loader2 className="h-4 w-4 animate-spin" /> Conectando…</>
+                      : <><CheckCircle className="h-4 w-4" /> Conectar Evolution API</>
+                    }
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* QR Code for Evolution API */}
+            {evolutionQrCode && (
+              <div className="pl-2 mt-3">
+                <div className="card p-5 text-center">
+                  <p className="text-sm font-semibold text-white mb-3">Escaneie o QR Code com seu WhatsApp</p>
+                  <img src={evolutionQrCode} alt="QR Code" className="mx-auto w-48 h-48 rounded-lg" />
+                  <p className="text-xs text-gray-400 mt-3">Abra o WhatsApp no celular → Configurações → Aparelhos conectados → Conectar aparelho</p>
+                </div>
+              </div>
+            )}
+
+            {/* Evolution API connected state */}
+            {data.evolutionFallbackEnabled && data.evolutionVerified && (
+              <div className="pl-2 mt-3">
+                <div className="card p-4 flex items-center gap-3 border-blue-500/40 bg-blue-500/8">
+                  <div className="h-10 w-10 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                    <Shield className="h-5 w-5 text-blue-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-blue-300">Fallback Evolution API conectado!</p>
+                    <p className="text-xs text-gray-400 mt-0.5">Se os créditos da Meta acabarem, o agente continuará respondendo via Evolution API.</p>
+                  </div>
+                  <button
+                    onClick={() => update({ evolutionVerified: false, evolutionApiUrl: '', evolutionApiKey: '', evolutionPhone: '' })}
+                    className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                  >
+                    Alterar
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

@@ -63,6 +63,13 @@ export class Tenant {
   @Column({ nullable: true })
   whatsappPhoneNumber: string
 
+  // Evolution API fallback (Baileys) — optional, doesn't consume Meta credits
+  @Column({ nullable: true })
+  evolutionApiUrl: string
+
+  @Column({ nullable: true })
+  evolutionApiKey: string
+
   // WhatsApp Business Cloud API credentials (official Meta integration)
   @Column({ nullable: true })
   metaPhoneNumberId: string
@@ -75,6 +82,12 @@ export class Tenant {
 
   @Column({ type: 'boolean', default: false })
   whatsappChannelEnabled: boolean
+
+  @Column({ nullable: true })
+  whatsappError: string
+
+  @Column({ type: 'timestamp', nullable: true })
+  whatsappErrorAt: Date
 
   // Google OAuth — stored at login, reused for Calendar
   @Column({ nullable: true })

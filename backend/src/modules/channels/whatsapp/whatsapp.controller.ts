@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Param, Query, UseGuards, Request, Res } from '@nestjs/common'
+import { Controller, Post, Get, Body, Param, Query, UseGuards, Request, Res, Logger } from '@nestjs/common'
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger'
 import { Response } from 'express'
 import { WhatsappService } from './whatsapp.service'
@@ -7,6 +7,7 @@ import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard'
 @ApiTags('WhatsApp')
 @Controller('whatsapp')
 export class WhatsappController {
+  private readonly logger = new Logger(WhatsappController.name)
   constructor(private readonly svc: WhatsappService) {}
 
   // ── Meta Cloud API webhook — verification (GET) ───────────────────────────
@@ -24,7 +25,12 @@ export class WhatsappController {
   // ── Meta Cloud API webhook — incoming messages (POST) ─────────────────────
   @Post('meta-webhook')
   async metaWebhook(@Body() body: any) {
-    await this.svc.handleMetaWebhook(body)
+    this.logger.log(`Meta webhook received: ${JSON.stringify(body).substring(0, 500)}`)
+    try {
+      await this.svc.handleMetaWebhook(body)
+    } catch (err: any) {
+      this.logger.error(`Meta webhook error: ${err.message}`)
+    }
     return { ok: true }
   }
 
@@ -37,6 +43,17 @@ export class WhatsappController {
     @Body() body: { phoneNumberId: string; accessToken: string },
   ) {
     return this.svc.setupCloudApi(req.user.tenantId, body.phoneNumberId, body.accessToken)
+  }
+
+  // ── Authenticated: configure Evolution API fallback ──────────────────────
+  @Post('setup-evolution-fallback')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async setupEvolutionFallback(
+    @Request() req,
+    @Body() body: { evolutionApiUrl: string; evolutionApiKey: string; phoneNumber: string },
+  ) {
+    return this.svc.setupEvolutionFallback(req.user.tenantId, body.evolutionApiUrl, body.evolutionApiKey, body.phoneNumber)
   }
 
   // ── Authenticated: connection status ─────────────────────────────────────
