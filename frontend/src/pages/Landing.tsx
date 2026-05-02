@@ -456,6 +456,7 @@ export default function LandingPage() {
   const featuresRef = useRef<HTMLDivElement>(null)
   const faqBodyRefs = useRef<(HTMLDivElement | null)[]>([])
   const stepDetailRef = useRef<HTMLDivElement>(null)
+  const templateDetailRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const nav = navRef.current
@@ -797,9 +798,13 @@ export default function LandingPage() {
             {USE_CASES.map((u, i) => (
               <button
                 key={i}
-                className={`uc-card reveal ${activeTemplate === i ? 'active' : ''}`}
-                data-delay={String((i % 3) + 1) as any}
-                onClick={() => setActiveTemplate(activeTemplate === i ? null : i)}
+                className={`uc-card ${activeTemplate === i ? 'active' : ''}`}
+                onClick={() => {
+                  setActiveTemplate(activeTemplate === i ? null : i)
+                  if (activeTemplate !== i) {
+                    setTimeout(() => templateDetailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80)
+                  }
+                }}
               >
                 <div className="uc-card-emoji">{u.emoji}</div>
                 <div className="uc-card-label">{u.label}</div>
@@ -813,7 +818,7 @@ export default function LandingPage() {
           </div>
 
           {/* Expanded detail panel */}
-          <div className="uc-detail-wrap" style={{
+          <div ref={templateDetailRef} className="uc-detail-wrap" style={{
             maxHeight: activeTemplate !== null ? 800 : 0,
             opacity: activeTemplate !== null ? 1 : 0,
             marginTop: activeTemplate !== null ? 32 : 0,
