@@ -30,6 +30,8 @@ export class DashboardController {
         phoneNumber: tenant.twilioPhoneNumber ?? null,
         whatsappEnabled: tenant.whatsappChannelEnabled,
         whatsappPhone: tenant.whatsappPhoneNumber ?? null,
+        whatsappError: tenant.whatsappError ?? null,
+        whatsappErrorAt: tenant.whatsappErrorAt ?? null,
         minutesUsed: tenant.minutesUsedThisMonth,
         minutesLimit: tenant.minutesLimitPerMonth,
         usagePercent: Math.round((tenant.minutesUsedThisMonth / tenant.minutesLimitPerMonth) * 100),
