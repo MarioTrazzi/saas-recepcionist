@@ -64,6 +64,15 @@ export class WhatsappController {
     return this.svc.checkStatus(req.user.tenantId)
   }
 
+  // ── Authenticated: clear unanswered messages ─────────────────────────────
+  @Post('clear-unanswered')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async clearUnanswered(@Request() req) {
+    await this.svc.clearUnansweredMessages(req.user.tenantId)
+    return { ok: true }
+  }
+
   // ── Baileys webhook (kept for backward compat) ────────────────────────────
   @Post('webhook/:tenantId')
   async baileysWebhook(@Param('tenantId') tenantId: string, @Body() body: any) {

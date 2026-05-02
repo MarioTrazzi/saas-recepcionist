@@ -193,6 +193,10 @@ export class WhatsappService {
         if (tenant.whatsappError) {
           await this.tenantsService.update(tenantId, { whatsappError: null, whatsappErrorAt: null })
         }
+        // Clear unanswered messages when WhatsApp starts working again
+        if (tenant.unansweredMessages?.length > 0) {
+          await this.clearUnansweredMessages(tenantId)
+        }
         return
       } catch (err: any) {
         const msg = err.response?.data?.error?.message || err.message || 'Erro desconhecido'
@@ -247,6 +251,11 @@ export class WhatsappService {
     const trimmed = unanswered.slice(0, 50)
     await this.tenantsService.update(tenantId, { unansweredMessages: trimmed })
     this.logger.warn(`[${tenantId}] Unanswered message saved for ${phone}`)
+  }
+
+  async clearUnansweredMessages(tenantId: string) {
+    await this.tenantsService.update(tenantId, { unansweredMessages: [] })
+    this.logger.log(`[${tenantId}] Cleared unanswered messages`)
   }
 
   private async sendFallbackMessage(tenant: any, to: string) {
