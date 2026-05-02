@@ -203,18 +203,81 @@ const FEATURES = [
 const USE_CASES = [
   {
     emoji: '🏥', label: 'Saúde', name: 'Clínicas & Consultórios',
+    agent: 'Sofia',
     quote: 'Bom dia! Clínica São Lucas. Tem consulta disponível amanhã às 10h com o Dr. Alves. Posso confirmar seu agendamento?',
-    agent: 'Sophia — Assistente da Clínica São Lucas',
+    howItWorks: 'A Sofia entende pedidos de agendamento, verifica a disponibilidade na agenda e confirma automaticamente. Se o paciente perguntar sobre especialidades ou convênios, ela responde com base nas informações cadastradas.',
+    features: ['Agenda consultas com data e hora', 'Informa especialidades e médicos', 'Verifica convênios e planos de saúde', 'Cancela ou reagenda horários', 'Envia lembretes de consulta'],
+    conversation: [
+      { from: 'patient', text: 'Quero marcar uma consulta com o cardiologista' },
+      { from: 'agent', text: 'Temos cardiologia disponível terça às 14h ou quarta às 10h com o Dr. Alves. Qual horário prefere?' },
+      { from: 'patient', text: 'Terça às 14h, por favor' },
+      { from: 'agent', text: 'Confirmado! Terça às 14h com Dr. Alves. Vou enviar um lembrete no dia anterior. Posso ajudar com mais alguma coisa?' },
+    ],
   },
   {
     emoji: '🍕', label: 'Alimentação', name: 'Restaurantes & Delivery',
+    agent: 'Bia',
     quote: 'Olá! Nosso cardápio de hoje inclui frango grelhado, macarrão ao pesto e saladas. Delivery em até 35 minutos. Qual você gostaria?',
-    agent: 'Luigi — Assistente do Restaurante Bella Pasta',
+    howItWorks: 'A Bia conhece todo o cardápio e preços. Ela monta o pedido, calcula o total e pergunta se é delivery ou retirada. Para reservas, verifica disponibilidade e confirma na hora.',
+    features: ['Mostra cardápio completo com preços', 'Aceita pedidos para delivery ou retirada', 'Informa horários de funcionamento', 'Faz reservas de mesa', 'Indica pratos do dia e promoções'],
+    conversation: [
+      { from: 'customer', text: 'Quero uma pizza margherita e uma coca-cola' },
+      { from: 'agent', text: 'Pizza margherita R$39,90 + Coca 2L R$12,90 = R$52,80. Delivery ou retirada?' },
+      { from: 'customer', text: 'Delivery' },
+      { from: 'agent', text: 'Perfeito! Tempo estimado: 35 minutos. Pagamento na entrega ou pelo Pix?' },
+    ],
   },
   {
     emoji: '🏠', label: 'Imóveis', name: 'Imobiliárias',
+    agent: 'Ana',
     quote: 'Encontrei 4 opções de 2 quartos no Bairro Jardins dentro do seu orçamento. Posso agendar uma visita para esse sábado?',
-    agent: 'Ana — Assistente da Prime Imóveis',
+    howItWorks: 'A Ana conhece o portfólio de imóveis e ajuda o cliente a encontrar o que procura. Filtra por região, preço e tipo, e agenda visitas quando o cliente demonstra interesse.',
+    features: ['Apresenta imóveis disponíveis com detalhes', 'Filtra por região, preço e tipo', 'Agenda visitas presenciais', 'Informa documentação necessária', 'Tira dúvidas sobre financiamento'],
+    conversation: [
+      { from: 'client', text: 'Procuro apartamento de 2 quartos em São Paulo, até 400 mil' },
+      { from: 'agent', text: 'Tenho 3 opções: Pinheiros (R$380k), Vila Mariana (R$395k) e Moema (R$400k). Quer detalhes de algum?' },
+      { from: 'client', text: 'Vila Mariana' },
+      { from: 'agent', text: 'Apartamento de 65m², 2 quartos, 1 vaga, varanda. Próximo ao metrô. Posso agendar uma visita para sábado?' },
+    ],
+  },
+  {
+    emoji: '💆', label: 'Estética', name: 'Salões & Clínicas de Estética',
+    agent: 'Lara',
+    quote: 'Oi! Temos horário disponível amanhã para corte e escova às 10h e às 15h. Quer agendar?',
+    howItWorks: 'A Lara agenda serviços de beleza, informa preços e duração de cada procedimento, e sugere horários disponíveis. Também pode indicar profissionais e combinar serviços.',
+    features: ['Agenda serviços de beleza', 'Informa preços e duração', 'Sugere profissionais disponíveis', 'Combina múltiplos serviços', 'Envia confirmação e lembrete'],
+    conversation: [
+      { from: 'client', text: 'Quero fazer corte e manicure' },
+      { from: 'agent', text: 'Corte R$60 + Manicure R$35 = R$95. Temos horário amanhã às 10h ou 14h. Qual prefere?' },
+      { from: 'client', text: '14h com a Patrícia' },
+      { from: 'agent', text: 'Confirmado! Corte e manicure amanhã às 14h com a Patrícia. Até lá!' },
+    ],
+  },
+  {
+    emoji: '🎓', label: 'Educação', name: 'Escolas & Cursos',
+    agent: 'Edu',
+    quote: 'Temos Inglês para adultos, R$450/mês, aulas 2x por semana. Quer agendar uma aula experimental gratuita?',
+    howItWorks: 'O Edu conhece todos os cursos, valores e processos de matrícula. Responde dúvidas, envia informações detalhadas e agenda aulas experimentais para novos alunos.',
+    features: ['Informa cursos e grade curricular', 'Tira dúvidas sobre matrícula', 'Informa valores e formas de pagamento', 'Agenda aulas experimentais', 'Envia material informativo'],
+    conversation: [
+      { from: 'student', text: 'Quero saber sobre o curso de Inglês' },
+      { from: 'agent', text: 'Temos Inglês para adultos (R$450/mês) e crianças (R$350/mês). Aulas 2x por semana. Quer agendar uma aula experimental?' },
+      { from: 'student', text: 'Sim, para adultos' },
+      { from: 'agent', text: 'Ótimo! Temos aula experimental terça às 19h ou sábado às 10h. Qual funciona melhor?' },
+    ],
+  },
+  {
+    emoji: '🔧', label: 'Serviços', name: 'Serviços Técnicos & Manutenção',
+    agent: 'Carlos',
+    quote: 'Temos disponibilidade amanhã às 9h ou 14h para o reparo. Qual horário fica melhor para você?',
+    howItWorks: 'O Carlos entende o tipo de serviço solicitado, verifica disponibilidade na agenda e agenda automaticamente. Para orçamentos, coleta as informações necessárias e envia uma estimativa.',
+    features: ['Agenda serviços e visitas técnicas', 'Informa preços e prazos', 'Tira dúvidas sobre tipos de serviço', 'Envia orçamentos estimados', 'Confirma agendamentos por WhatsApp'],
+    conversation: [
+      { from: 'customer', text: 'Preciso de um encanador, meu chuveiro está vazando' },
+      { from: 'agent', text: 'Entendi! Para vazamento de chuceiro, o reparo custa entre R$80 e R$150. Temos amanhã às 9h ou 14h disponível.' },
+      { from: 'customer', text: '9h, por favor' },
+      { from: 'agent', text: 'Agendado! Técnico amanhã às 9h. Ele levará as ferramentas necessárias. Posso ajudar com mais alguma coisa?' },
+    ],
   },
 ]
 
@@ -269,6 +332,7 @@ export default function LandingPage() {
   const [callTimer, setCallTimer] = useState(14)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [activeStep, setActiveStep] = useState<number | null>(null)
+  const [activeTemplate, setActiveTemplate] = useState<number | null>(null)
   const navRef = useRef<HTMLElement>(null)
   const featuresRef = useRef<HTMLDivElement>(null)
   const faqBodyRefs = useRef<(HTMLDivElement | null)[]>([])
@@ -604,29 +668,104 @@ export default function LandingPage() {
       <section className="lp-section" id="casos" style={{ borderTop: '1px solid var(--line)' }}>
         <div className="wrap">
           <div className="section-head reveal">
-            <span className="eyebrow">Casos de uso</span>
-            <h2 style={{ marginTop: 18 }}>Para qualquer<br />tipo de negócio</h2>
-            <p>Templates prontos para os principais segmentos. Escolha o seu e personalize.</p>
+            <span className="eyebrow">Templates por setor</span>
+            <h2 style={{ marginTop: 18 }}>Veja como o agente se comporta<br />no seu tipo de negócio</h2>
+            <p>Cada template é otimizado para o seu setor. Clique para ver como funciona na prática.</p>
           </div>
-          <div className="uc-list">
+
+          {/* Template grid */}
+          <div className="uc-grid">
             {USE_CASES.map((u, i) => (
-              <div key={i} className="uc reveal" data-delay={String(i + 1) as any}>
-                <div className="uc-emoji">{u.emoji}</div>
-                <div className="uc-meta">
-                  <div className="label">{u.label}</div>
-                  <h3>{u.name}</h3>
+              <button
+                key={i}
+                className={`uc-card reveal ${activeTemplate === i ? 'active' : ''}`}
+                data-delay={String((i % 3) + 1) as any}
+                onClick={() => setActiveTemplate(activeTemplate === i ? null : i)}
+              >
+                <div className="uc-card-emoji">{u.emoji}</div>
+                <div className="uc-card-label">{u.label}</div>
+                <h3 className="uc-card-name">{u.name}</h3>
+                <div className="uc-card-agent">Agente: {u.agent}</div>
+                <div className="uc-card-cta">
+                  {activeTemplate === i ? 'Fechar' : 'Ver como funciona →'}
                 </div>
-                <div className="uc-quote">
-                  <span className="agent">{u.agent}</span>
-                  {u.quote}
-                </div>
-              </div>
+              </button>
             ))}
           </div>
-          <div style={{ textAlign: 'center', marginTop: 40 }}>
+
+          {/* Expanded detail panel */}
+          <div className="uc-detail-wrap" style={{
+            maxHeight: activeTemplate !== null ? 800 : 0,
+            opacity: activeTemplate !== null ? 1 : 0,
+            marginTop: activeTemplate !== null ? 32 : 0,
+          }}>
+            {activeTemplate !== null && (() => {
+              const u = USE_CASES[activeTemplate]
+              return (
+                <div className="uc-detail">
+                  <div className="uc-detail-grid">
+                    {/* Left — how it works */}
+                    <div className="uc-detail-left">
+                      <div className="uc-detail-head">
+                        <span className="uc-detail-emoji">{u.emoji}</span>
+                        <div>
+                          <div className="uc-detail-label">{u.label}</div>
+                          <h3 className="uc-detail-name">{u.name}</h3>
+                        </div>
+                      </div>
+
+                      <div className="uc-detail-section">
+                        <h4>Como o agente {u.agent} funciona</h4>
+                        <p>{u.howItWorks}</p>
+                      </div>
+
+                      <div className="uc-detail-section">
+                        <h4>O que ele faz</h4>
+                        <ul className="uc-features">
+                          {u.features.map((f, j) => (
+                            <li key={j}><CheckCircle2 />{f}</li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <Link to="/register" className="btn btn-primary" style={{ marginTop: 8 }}>
+                        Começar com este template <ArrowRight />
+                      </Link>
+                    </div>
+
+                    {/* Right — conversation */}
+                    <div className="uc-detail-right">
+                      <div className="uc-chat-header">
+                        <div className="uc-chat-avatar">{u.agent[0]}</div>
+                        <div>
+                          <div className="uc-chat-name">{u.agent}</div>
+                          <div className="uc-chat-status">Online agora</div>
+                        </div>
+                      </div>
+                      <div className="uc-chat-body">
+                        {u.conversation.map((msg, j) => (
+                          <div key={j} className={`uc-msg ${msg.from === 'agent' ? 'agent' : 'user'}`}>
+                            {msg.text}
+                          </div>
+                        ))}
+                      </div>
+                      <div className="uc-chat-input">
+                        <span>Digite uma mensagem...</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
+          </div>
+
+          <div style={{ textAlign: 'center', marginTop: 48 }}>
             <Link to="/register" className="btn btn-primary btn-lg">
-              Ver todos os templates <ArrowRight />
+              Testar grátis — 14 dias <ArrowRight />
             </Link>
+            <p style={{ fontSize: 13, color: 'var(--text-mute)', marginTop: 14 }}>
+              Sem cartão de crédito · Configure em minutos
+            </p>
           </div>
         </div>
       </section>
