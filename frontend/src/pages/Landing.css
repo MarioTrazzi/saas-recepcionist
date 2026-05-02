@@ -321,6 +321,7 @@ nav.lp-nav.scrolled{
   font-size:12.5px;font-weight:500;
   display:flex;align-items:center;gap:9px;
   box-shadow:var(--shadow-1);
+  z-index:5;
 }
 .floater.f1{top:8%;left:-8%;animation:lp-floatA 6s ease-in-out infinite}
 .floater.f2{bottom:14%;right:-6%;animation:lp-floatB 7s ease-in-out infinite}
