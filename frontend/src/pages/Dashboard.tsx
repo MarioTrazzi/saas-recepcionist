@@ -123,6 +123,33 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* Critical Alerts */}
+      {tenant?.whatsappError?.includes('131042') && (
+        <div className="card border-red-500/25 bg-red-500/5 mb-6 overflow-hidden">
+          <div className="flex items-center justify-between gap-3 px-5 py-4">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="h-5 w-5 text-red-400 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-red-300">
+                  Créditos do WhatsApp esgotados
+                </p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  A Meta não conseguiu cobrar seu cartão. {tenant.whatsappEnabled ? 'O sistema está operando via Evolution API (Fallback).' : 'O atendimento automático parou.'}
+                </p>
+              </div>
+            </div>
+            <a 
+              href="https://business.facebook.com/settings/whatsapp-business-accounts/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-medium rounded-md transition-colors"
+            >
+              Resolver na Meta
+            </a>
+          </div>
+        </div>
+      )}
+
       {/* Unanswered messages due to WhatsApp credit exhaustion */}
       {tenant?.unansweredMessages?.length > 0 && (
         <div className="card border-orange-500/25 bg-orange-500/5 mb-6 overflow-hidden">

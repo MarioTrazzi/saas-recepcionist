@@ -222,8 +222,14 @@ export class WhatsappService {
   async sendMessage(tenantId: string, to: string, text: string, conversationId?: string) {
     const tenant = await this.tenantsService.findById(tenantId)
 
-    // Try Cloud API first (official Meta integration)
-    if (tenant.metaPhoneNumberId && tenant.metaAccessToken) {
+    // Check if we have a recorded credit error in the last 15 minutes to avoid repeated Meta failures
+    const isRecentlyOutOfCredits = 
+      tenant.whatsappError?.includes('131042') && 
+      tenant.whatsappErrorAt && 
+      (new Date().getTime() - new Date(tenant.whatsappErrorAt).getTime() < 15 * 60 * 1000)
+
+    // Try Cloud API first (official Meta integration) if not recently failed for credits
+    if (tenant.metaPhoneNumberId && tenant.metaAccessToken && !isRecentlyOutOfCredits) {
       try {
         await this.sendCloudApiMessage(tenant.metaPhoneNumberId, tenant.metaAccessToken, to, text)
         // Clear any previous error on success
@@ -236,40 +242,52 @@ export class WhatsappService {
         }
         return
       } catch (err: any) {
-        const msg = err.response?.data?.error?.message || err.message || 'Erro desconhecido'
-        this.logger.error(`[${tenantId}] Cloud API failed: ${msg}`)
-        await this.tenantsService.update(tenantId, { whatsappError: msg, whatsappErrorAt: new Date() })
+        const errorData = err.response?.data?.error
+        const errorCode = errorData?.code
+        const msg = errorData?.message || err.message || 'Erro desconhecido'
+        
+        // 131042 = Payment required/Out of credits
+        const fullError = errorCode ? `[${errorCode}] ${msg}` : msg
+        this.logger.error(`[${tenantId}] Cloud API failed: ${fullError}`)
+        await this.tenantsService.update(tenantId, { whatsappError: fullError, whatsappErrorAt: new Date() })
 
-        // Try Evolution API fallback (doesn't consume Meta credits)
-        if (tenant.evolutionApiUrl && tenant.evolutionApiKey && tenant.whatsappInstanceName) {
-          try {
-            this.logger.log(`[${tenantId}] Trying Evolution API fallback...`)
-            await this.sendBaileysMessage(tenant.evolutionApiUrl, tenant.evolutionApiKey, tenant.whatsappInstanceName, to, text)
-            this.logger.log(`[${tenantId}] Message sent via Evolution API fallback`)
-            // Clear error since fallback worked
-            await this.tenantsService.update(tenantId, { whatsappError: null, whatsappErrorAt: null })
-            return
-          } catch (fallbackErr: any) {
-            this.logger.error(`[${tenantId}] Evolution API fallback also failed: ${fallbackErr.message}`)
-          }
+        // If it was a credit error, skip to fallback immediately
+        if (errorCode === 131042 || msg.toLowerCase().includes('credit') || msg.toLowerCase().includes('payment')) {
+          this.logger.warn(`[${tenantId}] Meta credits exhausted. Switching to fallback.`)
+        } else {
+          // For other errors (like token expired), we might not want to spam fallback if it's a config issue
+          // but for now, we try fallback for everything
         }
-
-        // Both failed — save unanswered message for dashboard alert
-        await this.saveUnansweredMessage(tenantId, to, text, conversationId)
-
-        // Try to send fallback message via Evolution API (if available)
-        await this.sendFallbackMessage(tenant, to)
-        throw err
       }
     }
 
-    // Evolution API as primary (if no Cloud API configured)
+    // Evolution API fallback (doesn't consume Meta credits)
     if (tenant.evolutionApiUrl && tenant.evolutionApiKey && tenant.whatsappInstanceName) {
-      await this.sendBaileysMessage(tenant.evolutionApiUrl, tenant.evolutionApiKey, tenant.whatsappInstanceName, to, text)
-      return
+      try {
+        this.logger.log(`[${tenantId}] Trying Evolution API...`)
+        await this.sendBaileysMessage(tenant.evolutionApiUrl, tenant.evolutionApiKey, tenant.whatsappInstanceName, to, text)
+        this.logger.log(`[${tenantId}] Message sent via Evolution API`)
+        
+        // If we were in credit-error state but fallback works, we keep the error in DB 
+        // so the dashboard alert stays visible, but we succeeded in sending.
+        // However, we clear any non-credit transient errors.
+        if (tenant.whatsappError && !tenant.whatsappError.includes('131042')) {
+          await this.tenantsService.update(tenantId, { whatsappError: null, whatsappErrorAt: null })
+        }
+        return
+      } catch (fallbackErr: any) {
+        this.logger.error(`[${tenantId}] Evolution API failed: ${fallbackErr.message}`)
+      }
     }
 
-    throw new Error('WhatsApp not configured for this tenant')
+    // Both failed — save unanswered message for dashboard alert
+    await this.saveUnansweredMessage(tenantId, to, text, conversationId)
+
+    // Try to send fallback "out of order" message (via Evolution first)
+    await this.sendFallbackMessage(tenant, to)
+    
+    // Final throw if we couldn't send the original message via any channel
+    throw new Error('WhatsApp delivery failed across all channels')
   }
 
   private async saveUnansweredMessage(tenantId: string, phone: string, message: string, conversationId?: string) {
@@ -311,8 +329,8 @@ export class WhatsappService {
       }
     }
 
-    // Try Cloud API as last resort (might fail if credits exhausted)
-    if (tenant.metaPhoneNumberId && tenant.metaAccessToken) {
+    // Try Cloud API as last resort (might fail if credits exhausted, but worth a shot for small texts)
+    if (tenant.metaPhoneNumberId && tenant.metaAccessToken && !tenant.whatsappError?.includes('131042')) {
       try {
         await this.sendCloudApiMessage(tenant.metaPhoneNumberId, tenant.metaAccessToken, to, fallbackText)
         this.logger.log(`[${tenant.id}] Fallback message sent via Cloud API to ${to}`)
@@ -356,7 +374,7 @@ export class WhatsappService {
 
   // ── Status ────────────────────────────────────────────────────────────────
 
-  async checkStatus(tenantId: string): Promise<{ connected: boolean; state: string; mode: 'cloud-api' | 'baileys' | 'none'; fallbackConfigured: boolean }> {
+  async checkStatus(tenantId: string): Promise<{ connected: boolean; state: string; mode: 'cloud-api' | 'baileys' | 'none'; fallbackConfigured: boolean; error?: string }> {
     const tenant = await this.tenantsService.findById(tenantId)
 
     const fallbackConfigured = !!(tenant.evolutionApiUrl && tenant.evolutionApiKey && tenant.whatsappInstanceName)
@@ -371,9 +389,21 @@ export class WhatsappService {
             timeout: 8000,
           },
         )
+        
+        // Even if connected, report if there is a pending credit error
+        if (tenant.whatsappError?.includes('131042')) {
+          return { 
+            connected: true, 
+            state: 'open', 
+            mode: 'cloud-api', 
+            fallbackConfigured,
+            error: 'Créditos da Meta esgotados. Operando via fallback (se disponível).'
+          }
+        }
+
         return { connected: true, state: 'open', mode: 'cloud-api', fallbackConfigured }
-      } catch {
-        return { connected: false, state: 'error', mode: 'cloud-api', fallbackConfigured }
+      } catch (err: any) {
+        return { connected: false, state: 'error', mode: 'cloud-api', fallbackConfigured, error: tenant.whatsappError }
       }
     }
 

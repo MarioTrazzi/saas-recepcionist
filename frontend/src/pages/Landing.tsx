@@ -715,16 +715,25 @@ export default function LandingPage() {
                       ))}
                     </ul>
                     <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                      <Link to="/register" className="btn btn-primary">
+                      <button
+                        className="btn btn-primary"
+                        onClick={() => {
+                          document.getElementById('casos')?.scrollIntoView({ behavior: 'smooth' })
+                        }}
+                      >
                         {s.detail.cta} <ArrowRight />
-                      </Link>
-                      {activeStep < STEPS.length - 1 && (
+                      </button>
+                      {activeStep < STEPS.length - 1 ? (
                         <button
                           className="btn btn-ghost"
                           onClick={() => handleStepClick(activeStep + 1)}
                         >
                           Próximo passo <ArrowRight />
                         </button>
+                      ) : (
+                        <Link to="/login" className="btn btn-ghost">
+                          Próximo passo <ArrowRight />
+                        </Link>
                       )}
                     </div>
                   </div>

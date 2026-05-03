@@ -1,11 +1,18 @@
 import { useQuery } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Phone, MessageSquare, Clock, ChevronDown, ChevronUp } from 'lucide-react'
 import { conversationsApi } from '@/lib/api'
 
 export default function ConversationsPage() {
   const [page, setPage] = useState(1)
   const [expanded, setExpanded] = useState<string | null>(null)
+  const bottomRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (expanded) {
+      setTimeout(() => bottomRef.current?.scrollIntoView({ block: 'nearest' }), 0)
+    }
+  }, [expanded])
   const { data, isLoading } = useQuery({ queryKey: ['conversations', page], queryFn: () => conversationsApi.list(page) })
 
   return (
@@ -67,6 +74,7 @@ export default function ConversationsPage() {
                       </div>
                     </div>
                   ))}
+                  <div ref={bottomRef} />
                 </div>
               )}
             </div>
