@@ -9,6 +9,7 @@ import DashboardPage from '@/pages/Dashboard'
 import ConversationsPage from '@/pages/Conversations'
 import KnowledgePage from '@/pages/Knowledge'
 import SettingsPage from '@/pages/Settings'
+import CalendarPage from '@/pages/Calendar'
 import BillingPage from '@/pages/Billing'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import GoogleCallbackPage from '@/pages/Auth/GoogleCallback'
@@ -41,6 +42,7 @@ export default function App() {
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="conversations" element={<ConversationsPage />} />
         <Route path="knowledge" element={<KnowledgePage />} />
+        <Route path="calendar" element={<CalendarPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="billing" element={<BillingPage />} />
       </Route>

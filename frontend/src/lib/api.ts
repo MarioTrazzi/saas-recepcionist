@@ -99,4 +99,5 @@ export const calendarApi = {
   getWorkingHours: () => api.get('/calendar/working-hours').then(r => r.data),
   saveWorkingHours: (hours: any[]) => api.post('/calendar/working-hours', { hours }).then(r => r.data),
   listAppointments: (from?: string, to?: string) => api.get('/calendar/appointments', { params: { from, to } }).then(r => r.data),
+  listGoogleEvents: (from?: string, to?: string) => api.get('/calendar/google/events', { params: { from, to } }).then(r => r.data),
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, MessageSquare, BookOpen, Settings, CreditCard, LogOut, Phone, Menu, X } from 'lucide-react'
+import { LayoutDashboard, MessageSquare, BookOpen, Calendar, Settings, CreditCard, LogOut, Phone, Menu, X } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
 import { cn } from '@/lib/utils'
 
@@ -8,6 +8,7 @@ const navItems = [
   { to: '/app/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/app/conversations', icon: MessageSquare, label: 'Conversas' },
   { to: '/app/knowledge', icon: BookOpen, label: 'Base de Conhecimento' },
+  { to: '/app/calendar', icon: Calendar, label: 'Calendário' },
   { to: '/app/settings', icon: Settings, label: 'Configurações' },
   { to: '/app/billing', icon: CreditCard, label: 'Plano & Cobrança' },
 ]

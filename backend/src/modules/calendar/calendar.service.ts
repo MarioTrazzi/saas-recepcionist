@@ -115,4 +115,44 @@ export class CalendarService {
     const id = this.config.get('GOOGLE_CLIENT_ID')
     return !!(id && !id.includes('placeholder'))
   }
+
+  async listGoogleEvents(tenantId: string, from?: Date, to?: Date) {
+    const cfg = await this.agentConfigRepo.findOne({ where: { tenantId } })
+    if (!cfg?.googleCalendarRefreshToken) {
+      throw new Error('Google Calendar não conectado para este tenant')
+    }
+
+    const oauth2 = this.getOAuthClient()
+    oauth2.setCredentials({
+      access_token: cfg.googleCalendarToken,
+      refresh_token: cfg.googleCalendarRefreshToken,
+    })
+
+    const calendarApi = google.calendar({ version: 'v3', auth: oauth2 })
+    const calendarId = cfg.googleCalendarId || 'primary'
+
+    const timeMin = (from ?? new Date()).toISOString()
+    const timeMax = (to ?? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)).toISOString()
+
+    const res = await calendarApi.events.list({
+      calendarId,
+      timeMin,
+      timeMax,
+      singleEvents: true,
+      orderBy: 'startTime',
+      maxResults: 100,
+    })
+
+    return (res.data.items ?? []).map(ev => ({
+      id: ev.id,
+      summary: ev.summary ?? '(sem título)',
+      description: ev.description ?? null,
+      location: ev.location ?? null,
+      start: ev.start?.dateTime ?? ev.start?.date ?? null,
+      end: ev.end?.dateTime ?? ev.end?.date ?? null,
+      allDay: !ev.start?.dateTime,
+      htmlLink: ev.htmlLink ?? null,
+      attendees: (ev.attendees ?? []).map(a => ({ email: a.email, responseStatus: a.responseStatus })),
+    }))
+  }
 }

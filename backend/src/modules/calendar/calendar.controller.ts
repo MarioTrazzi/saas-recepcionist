@@ -87,4 +87,16 @@ export class CalendarController {
   async createAppointment(@Request() req, @Body() body: any) {
     return this.svc.createAppointment(req.user.tenantId, body)
   }
+
+  // List events from connected Google Calendar
+  @Get('google/events')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async listGoogleEvents(@Request() req, @Query('from') from?: string, @Query('to') to?: string) {
+    return this.svc.listGoogleEvents(
+      req.user.tenantId,
+      from ? new Date(from) : undefined,
+      to ? new Date(to) : undefined,
+    )
+  }
 }

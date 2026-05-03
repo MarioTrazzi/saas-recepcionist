@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Phone, MessageSquare, CheckCircle2, ArrowRight,
@@ -455,6 +455,7 @@ export default function LandingPage() {
   const navRef = useRef<HTMLElement>(null)
   const featuresRef = useRef<HTMLDivElement>(null)
   const faqBodyRefs = useRef<(HTMLDivElement | null)[]>([])
+  const faqRevealedRef = useRef<Set<number>>(new Set())
   const stepDetailRef = useRef<HTMLDivElement>(null)
   const templateDetailRef = useRef<HTMLDivElement>(null)
 
@@ -469,12 +470,28 @@ export default function LandingPage() {
   useEffect(() => {
     const els = document.querySelectorAll<HTMLElement>('.reveal')
     const obs = new IntersectionObserver(
-      entries => entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); obs.unobserve(e.target) } }),
+      entries => entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('in')
+          const idx = (e.target as HTMLElement).dataset.faqIdx
+          if (idx !== undefined) faqRevealedRef.current.add(Number(idx))
+          obs.unobserve(e.target)
+        }
+      }),
       { threshold: 0.12 }
     )
     els.forEach(el => obs.observe(el))
     return () => obs.disconnect()
   }, [])
+
+  useLayoutEffect(() => {
+    faqRevealedRef.current.forEach(idx => {
+      const el = document.querySelector(`.faq-item[data-faq-idx="${idx}"]`)
+      if (el && !el.classList.contains('in')) {
+        el.classList.add('in')
+      }
+    })
+  }, [openFaq])
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -985,7 +1002,7 @@ export default function LandingPage() {
           </div>
           <div className="faq">
             {FAQS.map((item, i) => (
-              <div key={i} className={`faq-item reveal ${openFaq === i ? 'open' : ''}`}>
+              <div key={i} data-faq-idx={i} className={`faq-item reveal ${openFaq === i ? 'open' : ''}`}>
                 <button className="faq-q" onClick={() => toggleFaq(i)}>
                   {item.q}
                   <span className="ico"><Plus /></span>
