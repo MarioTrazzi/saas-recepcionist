@@ -5,6 +5,7 @@ export enum TemplateCategory {
   RESTAURANT = 'restaurant',
   RETAIL = 'retail',
   SERVICES = 'services',
+  SALON = 'salon',
   REAL_ESTATE = 'real_estate',
   EDUCATION = 'education',
   CUSTOM = 'custom',

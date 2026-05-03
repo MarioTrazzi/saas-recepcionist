@@ -1,14 +1,50 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { templatesApi } from '@/lib/api'
-import { CheckCircle2, ArrowLeft, Bot, MessageSquare, Calendar, ShoppingCart, Building2, GraduationCap, Wrench } from 'lucide-react'
+import { CheckCircle2, ArrowLeft, Bot, MessageSquare, Calendar, ShoppingCart, GraduationCap, Wrench, Scissors, Home, Sparkles, Loader2, AlertCircle, RefreshCw } from 'lucide-react'
 import { WizardData } from '../index'
+
+const USE_CASE_EXAMPLES = [
+  {
+    emoji: '🎮',
+    label: 'Streamer / Criador',
+    description: 'Sou streamer na Twitch e YouTube. Quero um assistente que avise meus seguidores sobre minha agenda de lives, divulgue sorteios em andamento, responda dúvidas sobre o canal e patrocinadores, e direcione fãs para minhas redes.',
+  },
+  {
+    emoji: '🎤',
+    label: 'Organizador de evento',
+    description: 'Estou organizando um show de stand-up. Quero um assistente que informe data, local, valor dos ingressos, política de meia-entrada, e ajude com dúvidas comuns sobre o evento.',
+  },
+  {
+    emoji: '💼',
+    label: 'Freelancer / Consultor',
+    description: 'Sou consultor de marketing digital freelancer. Quero um assistente que receba leads no WhatsApp, qualifique brevemente (qual o problema, orçamento aproximado), e agende uma call de descoberta de 30min comigo na minha agenda.',
+  },
+  {
+    emoji: '🎨',
+    label: 'Artista / Comissões',
+    description: 'Sou ilustradora e faço comissões. Quero um assistente que dê informações sobre preços por estilo, prazos de entrega, formas de pagamento e fila atual de pedidos.',
+  },
+  {
+    emoji: '🏋️',
+    label: 'Personal / Coach',
+    description: 'Sou personal trainer. Quero um assistente que tire dúvidas sobre meus pacotes de aula, horários disponíveis, e agende uma aula experimental com novos alunos.',
+  },
+]
+
+interface GeneratedTemplate {
+  agentName: string
+  greetingMessage: string
+  systemPrompt: string
+  sampleKnowledge: Array<{ title: string; content: string }>
+}
 
 const CATEGORY_LABELS: Record<string, string> = {
   clinic: 'Saúde',
   restaurant: 'Alimentação',
   retail: 'Comércio',
-  services: 'Serviços',
+  services: 'Serviços Técnicos',
+  salon: 'Estética e Beleza',
   real_estate: 'Imóveis',
   education: 'Educação',
   custom: 'Personalizado',
@@ -17,9 +53,10 @@ const CATEGORY_LABELS: Record<string, string> = {
 const CATEGORY_ICONS: Record<string, any> = {
   clinic: Calendar,
   restaurant: ShoppingCart,
-  retail: Building2,
+  retail: ShoppingCart,
   services: Wrench,
-  real_estate: Building2,
+  salon: Scissors,
+  real_estate: Home,
   education: GraduationCap,
   custom: Bot,
 }
@@ -49,25 +86,36 @@ const TEMPLATE_DETAILS: Record<string, { features: string[]; example: string; ho
   },
   retail: {
     features: [
-      'Informa preços e disponibilidade de produtos',
-      'Consulta estoque em tempo real',
-      'Envia fotos e detalhes dos produtos',
-      'Processa encomendas e pedidos',
-      'Informa prazos de entrega e formas de pagamento',
+      'Apresenta produtos disponíveis com preços e variações',
+      'Consulta estoque e disponibilidade em tempo real',
+      'Informa formas de pagamento e parcelamento',
+      'Esclarece prazos de entrega e cobertura de frete',
+      'Explica política de trocas e devoluções',
     ],
-    example: 'Cliente: "Vocês têm tênis Nike Air Max?"\nCarlos: "Temos! Tamanhos 39 a 44, R$599,90. Quer que reserve para você?"',
-    howItWorks: 'O Carlos conhece seu catálogo de produtos e preços. Ele responde sobre disponibilidade, ajuda o cliente a encontrar o produto certo e pode registrar encomendas. Se não souber algo, transfere para um atendente.',
+    example: 'Cliente: "Vocês têm tênis Nike Air Max?"\nFelipe: "Temos! Tamanhos 39 a 44, R$599,90. Quer que reserve para você?"',
+    howItWorks: 'O Felipe conhece seu catálogo de produtos e preços. Ele responde sobre disponibilidade, ajuda o cliente a escolher o item certo e pode registrar encomendas. Se não souber algo, transfere para um atendente humano.',
   },
   services: {
     features: [
-      'Agenda serviços e visitas técnicas',
-      'Informa preços e prazos de execução',
-      'Tira dúvidas sobre tipos de serviço',
-      'Envia orçamentos estimados',
-      'Confirma agendamentos por WhatsApp',
+      'Entende o tipo de problema e estima faixa de preço',
+      'Agenda visita técnica com base na disponibilidade',
+      'Coleta endereço completo e melhor horário',
+      'Informa garantia e formas de pagamento',
+      'Envia orçamento estimado por WhatsApp',
     ],
-    example: 'Cliente: "Preciso de um encanador"\nAssistente: "Temos disponibilidade amanhã às 9h ou 14h. Qual horário funciona melhor?"',
-    howItWorks: 'O assistente entende o tipo de serviço solicitado, verifica disponibilidade na agenda e agenda automaticamente. Para orçamentos, ele coleta as informações necessárias e envia uma estimativa.',
+    example: 'Cliente: "Meu chuveiro está vazando"\nCarlos: "Vazamento de chuveiro fica entre R$80 e R$150. Tenho amanhã às 9h ou 14h. Qual horário?"',
+    howItWorks: 'O Carlos entende o tipo de serviço, estima uma faixa de preço com base no problema descrito e agenda a visita técnica. Para orçamentos detalhados, coleta endereço, fotos e melhor horário para o técnico.',
+  },
+  salon: {
+    features: [
+      'Agenda corte, escova, coloração, manicure e estética',
+      'Sugere combos quando o cliente pede mais de um serviço',
+      'Indica profissional disponível para cada serviço',
+      'Confirma horário, valor total e instruções de preparo',
+      'Lembra a cliente do horário no dia anterior',
+    ],
+    example: 'Cliente: "Quero corte e manicure"\nLara: "Corte R$80 + Manicure R$35 = R$115. Amanhã às 10h ou 14h?"',
+    howItWorks: 'A Lara conhece a tabela de serviços, preços e duração de cada um. Ela sugere combos, indica o profissional certo e fecha o agendamento com confirmação completa. Acolhedora e próxima, no tom certo de salão.',
   },
   real_estate: {
     features: [
@@ -102,6 +150,11 @@ interface Props {
 export function StepTemplate({ data, update, onNext }: Props) {
   const { data: templates = [], isLoading } = useQuery({ queryKey: ['templates'], queryFn: templatesApi.list })
   const [detailId, setDetailId] = useState<string | null>(null)
+  const [showCustomBuilder, setShowCustomBuilder] = useState(false)
+  const [customDescription, setCustomDescription] = useState('')
+  const [generated, setGenerated] = useState<GeneratedTemplate | null>(null)
+  const [generating, setGenerating] = useState(false)
+  const [genError, setGenError] = useState('')
 
   const detailTemplate = detailId ? templates.find((t: any) => t.id === detailId) : null
 
@@ -124,6 +177,190 @@ export function StepTemplate({ data, update, onNext }: Props) {
   const skipTemplate = () => {
     update({ templateId: 'custom', templateCategory: 'custom', agentName: 'Assistente', greetingMessage: 'Olá! Como posso ajudar?' })
     onNext()
+  }
+
+  const openCustomBuilder = () => {
+    setShowCustomBuilder(true)
+    setDetailId(null)
+    setGenerated(null)
+    setGenError('')
+  }
+
+  const closeCustomBuilder = () => {
+    setShowCustomBuilder(false)
+    setGenerated(null)
+    setGenError('')
+  }
+
+  const generate = async () => {
+    if (!customDescription.trim() || generating) return
+    setGenerating(true)
+    setGenError('')
+    try {
+      const result = await templatesApi.generateCustom(customDescription.trim())
+      setGenerated(result)
+    } catch (e: any) {
+      setGenError(e?.response?.data?.message || e.message || 'Não consegui gerar o template agora.')
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  const useGenerated = () => {
+    if (!generated) return
+    update({
+      templateId: 'custom',
+      templateCategory: 'custom',
+      agentName: generated.agentName,
+      greetingMessage: generated.greetingMessage,
+      systemPrompt: generated.systemPrompt,
+      knowledgeItems: generated.sampleKnowledge,
+    })
+    onNext()
+  }
+
+  // Custom builder view
+  if (showCustomBuilder) {
+    return (
+      <div>
+        <button
+          onClick={closeCustomBuilder}
+          className="flex items-center gap-2 text-sm text-gray-400 hover:text-white mb-6 transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Voltar para templates
+        </button>
+
+        <div className="flex items-center gap-3 mb-2">
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+            <Sparkles className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-white">Personalizado com IA</h2>
+            <p className="text-sm text-gray-400">Descreva seu caso de uso e a IA monta o template inteiro pra você.</p>
+          </div>
+        </div>
+
+        <div className="max-w-3xl mt-8 space-y-6">
+          {/* Examples */}
+          <div>
+            <p className="text-xs font-semibold text-gray-300 uppercase tracking-wider mb-3">
+              Exemplos — clique para preencher
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              {USE_CASE_EXAMPLES.map(ex => (
+                <button
+                  key={ex.label}
+                  onClick={() => { setCustomDescription(ex.description); setGenerated(null); setGenError('') }}
+                  className="card p-3 text-left hover:border-primary/60 transition-all"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">{ex.emoji}</span>
+                    <span className="text-xs font-medium text-gray-200">{ex.label}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Description input */}
+          <div>
+            <label className="text-sm font-medium text-gray-300 block mb-2">
+              Descreva o que seu assistente vai fazer
+            </label>
+            <textarea
+              value={customDescription}
+              onChange={e => { setCustomDescription(e.target.value); setGenerated(null); setGenError('') }}
+              placeholder="Ex: Sou streamer da Twitch e quero um assistente que avise sobre minha agenda de lives, divulgue sorteios e responda dúvidas sobre meus patrocinadores..."
+              rows={5}
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-sm text-gray-100 placeholder-gray-500 focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none resize-none"
+            />
+            <p className="text-xs text-gray-500 mt-1.5">
+              Quanto mais detalhes você der, melhor o template. Mencione tom de voz, o que NÃO fazer, e tipos de pergunta esperados.
+            </p>
+          </div>
+
+          {genError && (
+            <div className="card border-red-500/25 bg-red-500/5 p-4 flex items-start gap-3">
+              <AlertCircle className="h-4 w-4 text-red-400 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-red-300">{genError}</p>
+            </div>
+          )}
+
+          {!generated && (
+            <button
+              onClick={generate}
+              disabled={generating || customDescription.trim().length < 10}
+              className="btn-primary flex items-center gap-2 text-sm py-2.5 px-5 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {generating ? (
+                <><Loader2 className="h-4 w-4 animate-spin" /> Gerando com IA…</>
+              ) : (
+                <><Sparkles className="h-4 w-4" /> Gerar template com IA</>
+              )}
+            </button>
+          )}
+
+          {/* Generated preview */}
+          {generated && (
+            <div className="card p-5 border-primary/40 bg-primary/5 space-y-5">
+              <div className="flex items-center gap-2 text-primary">
+                <CheckCircle2 className="h-4 w-4" />
+                <p className="text-sm font-semibold">Template gerado</p>
+              </div>
+
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">Nome do agente</p>
+                <p className="text-lg font-semibold text-white">{generated.agentName}</p>
+              </div>
+
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">Mensagem de saudação</p>
+                <p className="text-sm text-gray-200 italic">"{generated.greetingMessage}"</p>
+              </div>
+
+              <details className="group">
+                <summary className="cursor-pointer text-xs text-gray-400 hover:text-gray-200 list-none flex items-center gap-1.5">
+                  <span className="group-open:rotate-90 transition-transform inline-block">▸</span>
+                  Ver instruções do agente (system prompt)
+                </summary>
+                <pre className="mt-2 text-xs text-gray-300 bg-gray-900/60 border border-gray-700 rounded-lg p-3 whitespace-pre-wrap font-sans leading-relaxed max-h-64 overflow-y-auto">
+                  {generated.systemPrompt}
+                </pre>
+              </details>
+
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-2">
+                  Base de conhecimento inicial ({generated.sampleKnowledge.length} itens)
+                </p>
+                <div className="space-y-2">
+                  {generated.sampleKnowledge.map((k, i) => (
+                    <div key={i} className="rounded-lg bg-gray-900/60 border border-gray-700 px-3 py-2">
+                      <p className="text-xs font-medium text-gray-200">{k.title}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{k.content}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
+                <button onClick={useGenerated} className="btn-primary text-sm py-2 px-5">
+                  Usar este template
+                </button>
+                <button
+                  onClick={generate}
+                  disabled={generating}
+                  className="btn-secondary flex items-center gap-2 text-sm py-2 px-4 disabled:opacity-50"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" /> Gerar de novo
+                </button>
+                <span className="text-xs text-gray-500 ml-auto">Você pode editar tudo depois</span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    )
   }
 
   // Detail view when a template is selected for preview
@@ -228,16 +465,16 @@ export function StepTemplate({ data, update, onNext }: Props) {
             })}
 
             <button
-              onClick={skipTemplate}
-              className="w-full card p-4 text-left hover:border-gray-600 transition-all"
+              onClick={openCustomBuilder}
+              className="w-full card p-4 text-left hover:border-primary/60 transition-all border-primary/30 bg-primary/5"
             >
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-gray-700 flex items-center justify-center">
-                  <Wrench className="h-4 w-4 text-gray-400" />
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                  <Sparkles className="h-4 w-4 text-white" />
                 </div>
                 <div>
-                  <h5 className="text-sm font-medium text-gray-300">Personalizado</h5>
-                  <p className="text-xs text-gray-500">Sem template, configurar do zero</p>
+                  <h5 className="text-sm font-medium text-white">Personalizado com IA</h5>
+                  <p className="text-xs text-gray-400">A IA monta pra você</p>
                 </div>
               </div>
             </button>
@@ -285,12 +522,37 @@ export function StepTemplate({ data, update, onNext }: Props) {
               </button>
             )
           })}
+
+          {/* AI custom template card — featured */}
+          <button
+            onClick={openCustomBuilder}
+            className="card p-5 text-left transition-all border-primary/40 bg-gradient-to-br from-primary/10 via-primary/5 to-accent/10 hover:border-primary/70 hover:from-primary/15 relative overflow-hidden"
+          >
+            <div className="absolute top-2 right-2">
+              <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-accent/20 text-accent border border-accent/30">
+                Novo
+              </span>
+            </div>
+            <div className="flex items-start justify-between mb-3">
+              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                <Sparkles className="h-5 w-5 text-white" />
+              </div>
+            </div>
+            <h3 className="font-semibold text-white mb-1">Personalizado com IA</h3>
+            <p className="text-xs text-gray-300 leading-relaxed mb-3">
+              Não achou seu setor? Descreva o que você faz (streamer, evento, freelancer…) e a IA monta o template inteiro.
+            </p>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-gray-400">Gerado por IA</span>
+              <span className="text-xs text-primary font-medium">Criar template →</span>
+            </div>
+          </button>
         </div>
       )}
 
       <div className="mt-6">
-        <button onClick={skipTemplate} className="text-sm text-gray-400 hover:text-gray-200 underline">
-          Começar do zero sem template
+        <button onClick={skipTemplate} className="text-xs text-gray-500 hover:text-gray-300 transition-colors">
+          Pular e configurar tudo manualmente →
         </button>
       </div>
     </div>

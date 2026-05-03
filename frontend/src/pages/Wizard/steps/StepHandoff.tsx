@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
-import { ChevronRight, ChevronLeft, UserCheck, Calendar, CheckCircle, Loader2, ExternalLink, Clock } from 'lucide-react'
+import { ChevronRight, ChevronLeft, UserCheck, Calendar, CheckCircle, Loader2, ExternalLink, Clock, Info } from 'lucide-react'
 import { WizardData } from '../index'
 import { calendarApi } from '@/lib/api'
+import { getTemplateContext } from '@/lib/template-context'
 
 interface Props {
   data: WizardData
@@ -30,6 +31,7 @@ const DAY_NAMES = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 type GoogleState = 'idle' | 'loading' | 'connected' | 'error' | 'not_configured'
 
 export function StepHandoff({ data, update, onNext, onBack }: Props) {
+  const ctx = getTemplateContext(data.templateCategory)
   const [googleState, setGoogleState] = useState<GoogleState>('idle')
   const [googleError, setGoogleError] = useState('')
 
@@ -81,9 +83,12 @@ export function StepHandoff({ data, update, onNext, onBack }: Props) {
     setWorkingHours(prev => prev.map(d => d.dayOfWeek === dayOfWeek ? { ...d, [field]: value } : d))
   }
 
-  // Sync working hours into wizard data whenever they change
+  // Default the calendar slot duration to the value that fits the template,
+  // unless the user already customized it (i.e. it differs from the generic 60 default).
   useEffect(() => {
-    update({ calendarSlotMinutes: data.calendarSlotMinutes })
+    if (data.calendarSlotMinutes === 60 && ctx.defaultSlotMinutes !== 60) {
+      update({ calendarSlotMinutes: ctx.defaultSlotMinutes })
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -96,7 +101,11 @@ export function StepHandoff({ data, update, onNext, onBack }: Props) {
 
         {/* Handoff options */}
         <div>
-          <h3 className="text-sm font-semibold text-gray-300 mb-3">Transferência para humano</h3>
+          <h3 className="text-sm font-semibold text-gray-300 mb-2">Transferência para humano</h3>
+          <div className="flex items-start gap-2 mb-3 text-xs text-gray-500 bg-gray-800/50 border border-gray-700/50 rounded-lg px-3 py-2">
+            <Info className="h-3.5 w-3.5 text-primary/80 flex-shrink-0 mt-0.5" />
+            <p>{ctx.handoffHint}</p>
+          </div>
           <div className="space-y-2">
             {HANDOFF_OPTIONS.map(opt => (
               <button

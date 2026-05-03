@@ -12,6 +12,7 @@ import { TemplatesModule } from './modules/templates/templates.module'
 import { BillingModule } from './modules/billing/billing.module'
 import { DashboardModule } from './modules/dashboard/dashboard.module'
 import { CalendarModule } from './modules/calendar/calendar.module'
+import { SupportModule } from './modules/support/support.module'
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { CalendarModule } from './modules/calendar/calendar.module'
     BillingModule,
     DashboardModule,
     CalendarModule,
+    SupportModule,
   ],
 })
 export class AppModule {}

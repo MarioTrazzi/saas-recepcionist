@@ -1,5 +1,6 @@
-import { ChevronRight, ChevronLeft } from 'lucide-react'
+import { ChevronRight, ChevronLeft, Tag } from 'lucide-react'
 import { WizardData } from '../index'
+import { getTemplateContext } from '@/lib/template-context'
 
 interface Props {
   data: WizardData
@@ -22,10 +23,18 @@ const LANGUAGES = [
 
 export function StepPersonalize({ data, update, onNext, onBack }: Props) {
   const canContinue = data.agentName.trim() && data.greetingMessage.trim()
+  const ctx = getTemplateContext(data.templateCategory)
 
   return (
     <div>
-      <h2 className="text-2xl font-bold text-white mb-2">Personalize seu agente</h2>
+      <div className="flex items-center justify-between mb-2 gap-4 flex-wrap">
+        <h2 className="text-2xl font-bold text-white">Personalize seu agente</h2>
+        {data.templateCategory && (
+          <span className="text-xs flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/15 text-primary border border-primary/25">
+            <Tag className="h-3 w-3" /> Template: {ctx.label}
+          </span>
+        )}
+      </div>
       <p className="text-gray-400 mb-8">Defina como seu assistente virtual vai se apresentar.</p>
 
       <div className="space-y-6 max-w-2xl">
@@ -35,7 +44,7 @@ export function StepPersonalize({ data, update, onNext, onBack }: Props) {
             className="input"
             value={data.agentName}
             onChange={e => update({ agentName: e.target.value })}
-            placeholder="Ex: Sofia, Carlos, Ana..."
+            placeholder={ctx.agentNamePlaceholder}
           />
           <p className="text-xs text-gray-500 mt-1">Esse é o nome que o agente usará para se apresentar</p>
         </div>
@@ -46,7 +55,7 @@ export function StepPersonalize({ data, update, onNext, onBack }: Props) {
             className="input"
             value={data.greetingMessage}
             onChange={e => update({ greetingMessage: e.target.value })}
-            placeholder="Ex: Olá! Sou a Sofia da Clínica Saúde. Como posso ajudar?"
+            placeholder={ctx.greetingPlaceholder}
           />
         </div>
 
@@ -83,7 +92,7 @@ export function StepPersonalize({ data, update, onNext, onBack }: Props) {
             className="input min-h-[100px] resize-none"
             value={data.systemPrompt}
             onChange={e => update({ systemPrompt: e.target.value })}
-            placeholder="Ex: Nunca dê diagnósticos médicos. Sempre ofereça agendar uma consulta. Não fale sobre concorrentes."
+            placeholder={ctx.systemPromptPlaceholder}
           />
           <p className="text-xs text-gray-500 mt-1">Regras e comportamentos específicos para o seu agente</p>
         </div>

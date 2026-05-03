@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ChevronRight, ChevronLeft, Plus, Trash2, Upload, FileText, Globe, Loader2, Lightbulb, ChevronDown, CheckCircle2 } from 'lucide-react'
 import { WizardData } from '../index'
 import { getSuggestions } from '@/lib/knowledge-suggestions'
+import { getTemplateContext } from '@/lib/template-context'
 import { knowledgeApi } from '@/lib/api'
 
 interface Props {
@@ -22,6 +23,7 @@ export function StepKnowledge({ data, update, onNext, onBack }: Props) {
   const [showSuggestions, setShowSuggestions] = useState(true)
 
   const suggestions = getSuggestions(data.templateCategory || 'custom')
+  const ctx = getTemplateContext(data.templateCategory)
 
   const addItem = () => {
     if (!newTitle.trim() || !newContent.trim()) return
@@ -123,7 +125,7 @@ export function StepKnowledge({ data, update, onNext, onBack }: Props) {
           >
             <div className="flex items-center gap-2">
               <Lightbulb className="h-4 w-4 text-yellow-400" />
-              <h3 className="text-sm font-semibold text-white">Documentos sugeridos para o seu setor</h3>
+              <h3 className="text-sm font-semibold text-white">Documentos sugeridos para {ctx.label}</h3>
               <span className="text-xs bg-yellow-400/10 text-yellow-400 px-2 py-0.5 rounded-full">{suggestions.length} sugestões</span>
             </div>
             <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${showSuggestions ? 'rotate-180' : ''}`} />
@@ -215,13 +217,13 @@ export function StepKnowledge({ data, update, onNext, onBack }: Props) {
             className="input"
             value={newTitle}
             onChange={e => setNewTitle(e.target.value)}
-            placeholder="Título (ex: Horário de Funcionamento)"
+            placeholder={ctx.manualKnowledgePlaceholder.title}
           />
           <textarea
             className="input min-h-[80px] resize-none"
             value={newContent}
             onChange={e => setNewContent(e.target.value)}
-            placeholder="Conteúdo..."
+            placeholder={ctx.manualKnowledgePlaceholder.content}
           />
           <div className="flex gap-2">
             <button onClick={addItem} disabled={!newTitle || !newContent} className="btn-secondary flex items-center gap-2 text-sm py-2 disabled:opacity-50">

@@ -327,10 +327,10 @@ const USE_CASES = [
     howItWorks: 'A Sofia entende pedidos de agendamento, verifica a disponibilidade na agenda e confirma automaticamente. Se o paciente perguntar sobre especialidades ou convênios, ela responde com base nas informações cadastradas.',
     features: ['Agenda consultas com data e hora', 'Informa especialidades e médicos', 'Verifica convênios e planos de saúde', 'Cancela ou reagenda horários', 'Envia lembretes de consulta'],
     conversation: [
-      { from: 'patient', text: 'Quero marcar uma consulta com o cardiologista' },
-      { from: 'agent', text: 'Temos cardiologia disponível terça às 14h ou quarta às 10h com o Dr. Alves. Qual horário prefere?' },
-      { from: 'patient', text: 'Terça às 14h, por favor' },
-      { from: 'agent', text: 'Confirmado! Terça às 14h com Dr. Alves. Vou enviar um lembrete no dia anterior. Posso ajudar com mais alguma coisa?' },
+      { from: 'patient', text: 'Quais convênios vocês aceitam?' },
+      { from: 'agent', text: 'Trabalhamos com Unimed, Bradesco Saúde, Amil, SulAmérica e NotreDame. Também atendemos particular.' },
+      { from: 'patient', text: 'Tenho Unimed. Quero agendar com o cardiologista.' },
+      { from: 'agent', text: 'Perfeito! Pela Unimed, temos o Dr. Alves terça às 14h ou quarta às 10h. Qual horário prefere?' },
     ],
   },
   {
@@ -341,9 +341,9 @@ const USE_CASES = [
     features: ['Mostra cardápio completo com preços', 'Aceita pedidos para delivery ou retirada', 'Informa horários de funcionamento', 'Faz reservas de mesa', 'Indica pratos do dia e promoções'],
     conversation: [
       { from: 'customer', text: 'Quero uma pizza margherita e uma coca-cola' },
-      { from: 'agent', text: 'Pizza margherita R$39,90 + Coca 2L R$12,90 = R$52,80. Delivery ou retirada?' },
-      { from: 'customer', text: 'Delivery' },
-      { from: 'agent', text: 'Perfeito! Tempo estimado: 35 minutos. Pagamento na entrega ou pelo Pix?' },
+      { from: 'agent', text: 'Pizza margherita R$39,90 + Coca 2L R$12,90 = R$52,80. Vai pagar como?' },
+      { from: 'customer', text: 'Pix' },
+      { from: 'agent', text: 'Chave Pix: CNPJ 12.345.678/0001-90. É só copiar e colar no seu app. Assim que o pagamento confirmar, seu pedido vai para produção!' },
     ],
   },
   {
@@ -380,9 +380,9 @@ const USE_CASES = [
     features: ['Informa cursos e grade curricular', 'Tira dúvidas sobre matrícula', 'Informa valores e formas de pagamento', 'Agenda aulas experimentais', 'Envia material informativo'],
     conversation: [
       { from: 'student', text: 'Quero saber sobre o curso de Inglês' },
-      { from: 'agent', text: 'Temos Inglês para adultos (R$450/mês) e crianças (R$350/mês). Aulas 2x por semana. Quer agendar uma aula experimental?' },
-      { from: 'student', text: 'Sim, para adultos' },
-      { from: 'agent', text: 'Ótimo! Temos aula experimental terça às 19h ou sábado às 10h. Qual funciona melhor?' },
+      { from: 'agent', text: 'Inglês para adultos R$450/mês, 2x por semana. Quer acessar uma aula experimental gratuita?' },
+      { from: 'student', text: 'Sim, como acesso?' },
+      { from: 'agent', text: 'Enviei o link da sala virtual no seu WhatsApp. Acesso: aluno.ingles@educursos.com / Senha: edu2024. A aula começa terça às 19h!' },
     ],
   },
   {
@@ -663,7 +663,7 @@ export default function LandingPage() {
             {STEPS.map((s, i) => (
               <button
                 key={i}
-                className="step reveal"
+                className={`step reveal ${i === 0 && activeStep === null ? 'step-click-hint' : ''}`}
                 data-delay={String(i + 1) as any}
                 onClick={() => handleStepClick(i)}
                 style={{
@@ -688,6 +688,11 @@ export default function LandingPage() {
                 }}>
                   <MousePointerClick style={{ width: 14, height: 14 }} />
                   {activeStep === i ? 'Fechar detalhes' : 'Ver detalhes'}
+                  {i === 0 && activeStep === null && (
+                    <span className="click-arrow" style={{ display: 'inline-flex', marginLeft: 2 }}>
+                      <ArrowRight style={{ width: 13, height: 13 }} />
+                    </span>
+                  )}
                 </div>
               </button>
             ))}

@@ -213,12 +213,13 @@ export default function KnowledgePage() {
 
 function detectCategoryFromConfig(config: any): string {
   if (!config) return 'custom'
-  const name = (config.agentName || '').toLowerCase()
   const prompt = (config.systemPrompt || '').toLowerCase()
   if (prompt.includes('clínica') || prompt.includes('consulta') || prompt.includes('médic')) return 'clinic'
   if (prompt.includes('restaurante') || prompt.includes('cardápio') || prompt.includes('delivery')) return 'restaurant'
-  if (prompt.includes('loja') || prompt.includes('produto') || prompt.includes('estoque')) return 'retail'
-  if (prompt.includes('imóvel') || prompt.includes('imobiliária') || prompt.includes('aluguel')) return 'real_estate'
-  if (prompt.includes('curso') || prompt.includes('escola') || prompt.includes('ensino')) return 'education'
-  return 'services'
+  if (prompt.includes('salão') || prompt.includes('estética') || prompt.includes('manicure') || prompt.includes('coloração')) return 'salon'
+  if (prompt.includes('encanador') || prompt.includes('eletricista') || prompt.includes('técnic') || prompt.includes('reparo')) return 'services'
+  if (prompt.includes('loja') || prompt.includes('produto') || prompt.includes('estoque') || prompt.includes('catálogo')) return 'retail'
+  if (prompt.includes('imóvel') || prompt.includes('imobiliária') || prompt.includes('aluguel') || prompt.includes('corretor')) return 'real_estate'
+  if (prompt.includes('curso') || prompt.includes('escola') || prompt.includes('ensino') || prompt.includes('matrícula')) return 'education'
+  return 'custom'
 }

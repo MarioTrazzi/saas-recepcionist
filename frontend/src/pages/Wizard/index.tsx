@@ -7,6 +7,7 @@ import { StepKnowledge } from './steps/StepKnowledge'
 import { StepChannels } from './steps/StepChannels'
 import { StepHandoff } from './steps/StepHandoff'
 import { StepActivate } from './steps/StepActivate'
+import { SupportChat } from '@/components/wizard/SupportChat'
 import { agentApi, phoneApi, calendarApi, whatsappApi } from '@/lib/api'
 
 const STEPS = [
@@ -178,6 +179,8 @@ export default function WizardPage() {
         {step === 5 && <StepHandoff {...stepProps} />}
         {step === 6 && <StepActivate {...stepProps} onFinish={finish} saving={saving} />}
       </div>
+
+      <SupportChat currentStep={step} />
     </div>
   )
 }

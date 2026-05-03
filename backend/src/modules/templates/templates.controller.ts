@@ -1,5 +1,6 @@
-import { Controller, Get, Param } from '@nestjs/common'
-import { ApiTags } from '@nestjs/swagger'
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common'
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger'
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { TemplatesService } from './templates.service'
 
 @ApiTags('Templates')
@@ -10,6 +11,13 @@ export class TemplatesController {
   @Get()
   list() {
     return this.svc.listPublic()
+  }
+
+  @Post('custom/generate')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async generateCustom(@Body() body: { description: string }) {
+    return this.svc.generateCustom(body.description ?? '')
   }
 
   @Get(':id')

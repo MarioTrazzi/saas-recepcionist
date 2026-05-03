@@ -82,6 +82,13 @@ export const conversationsApi = {
 export const templatesApi = {
   list: () => api.get('/templates').then(r => r.data),
   get: (id: string) => api.get(`/templates/${id}`).then(r => r.data),
+  generateCustom: (description: string) =>
+    api.post('/templates/custom/generate', { description }).then(r => r.data as {
+      agentName: string
+      greetingMessage: string
+      systemPrompt: string
+      sampleKnowledge: Array<{ title: string; content: string }>
+    }),
 }
 
 export const billingApi = {
@@ -91,6 +98,11 @@ export const billingApi = {
 
 export const dashboardApi = {
   get: () => api.get('/dashboard').then(r => r.data),
+}
+
+export const supportApi = {
+  chat: (messages: Array<{ role: 'user' | 'assistant'; content: string }>, currentStep?: string) =>
+    api.post('/support/chat', { messages, currentStep }).then(r => r.data as { reply: string }),
 }
 
 export const calendarApi = {

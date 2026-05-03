@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   ChevronRight, ChevronLeft, Phone, MessageSquare, CheckCircle,
   AlertCircle, Loader2, ExternalLink, Copy, Check, KeyRound,
-  Shield, Zap, Star,
+  Shield, Zap, Star, Search, AlertTriangle, Rocket,
 } from 'lucide-react'
 import { WizardData } from '../index'
 import { whatsappApi, phoneApi } from '@/lib/api'
@@ -13,6 +13,102 @@ interface Props {
   update: (d: Partial<WizardData>) => void
   onNext: () => void
   onBack: () => void
+}
+
+interface PhoneNumberOption {
+  sid: string
+  phoneNumber: string
+  region: string
+  isMock: boolean
+}
+
+const DDD_REGIONS: Record<string, string> = {
+  '11': 'São Paulo - Capital',
+  '12': 'Vale do Paraíba - SP',
+  '13': 'Baixada Santista - SP',
+  '14': 'Bauru e região - SP',
+  '15': 'Sorocaba e região - SP',
+  '16': 'Ribeirão Preto - SP',
+  '17': 'São José do Rio Preto - SP',
+  '18': 'Presidente Prudente - SP',
+  '19': 'Campinas e região - SP',
+  '21': 'Rio de Janeiro - Capital',
+  '22': 'Campos dos Goytacazes - RJ',
+  '24': 'Volta Redonda - RJ',
+  '27': 'Vitória - ES',
+  '31': 'Belo Horizonte - MG',
+  '41': 'Curitiba - PR',
+  '43': 'Londrina - PR',
+  '44': 'Maringá - PR',
+  '47': 'Joinville - SC',
+  '48': 'Florianópolis - SC',
+  '51': 'Porto Alegre - RS',
+  '54': 'Caxias do Sul - RS',
+  '61': 'Brasília - DF',
+  '62': 'Goiânia - GO',
+  '65': 'Cuiabá - MT',
+  '67': 'Campo Grande - MS',
+  '71': 'Salvador - BA',
+  '81': 'Recife - PE',
+  '83': 'João Pessoa - PB',
+  '84': 'Natal - RN',
+  '85': 'Fortaleza - CE',
+  '91': 'Belém - PA',
+  '92': 'Manaus - AM',
+  '98': 'São Luís - MA',
+}
+
+const MOCK_POOL: Array<{ phoneNumber: string; ddd: string }> = [
+  { phoneNumber: '+5511991230001', ddd: '11' },
+  { phoneNumber: '+5511992340002', ddd: '11' },
+  { phoneNumber: '+5511993450003', ddd: '11' },
+  { phoneNumber: '+5512991230001', ddd: '12' },
+  { phoneNumber: '+5512992340002', ddd: '12' },
+  { phoneNumber: '+5513991230001', ddd: '13' },
+  { phoneNumber: '+5513992340002', ddd: '13' },
+  { phoneNumber: '+5515991230001', ddd: '15' },
+  { phoneNumber: '+5516991230001', ddd: '16' },
+  { phoneNumber: '+5516992340002', ddd: '16' },
+  { phoneNumber: '+5517991230001', ddd: '17' },
+  { phoneNumber: '+5517992340002', ddd: '17' },
+  { phoneNumber: '+5517993450003', ddd: '17' },
+  { phoneNumber: '+5519991230001', ddd: '19' },
+  { phoneNumber: '+5519992340002', ddd: '19' },
+  { phoneNumber: '+5521991230001', ddd: '21' },
+  { phoneNumber: '+5521992340002', ddd: '21' },
+  { phoneNumber: '+5521993450003', ddd: '21' },
+  { phoneNumber: '+5531991230001', ddd: '31' },
+  { phoneNumber: '+5531992340002', ddd: '31' },
+  { phoneNumber: '+5541991230001', ddd: '41' },
+  { phoneNumber: '+5541992340002', ddd: '41' },
+  { phoneNumber: '+5547991230001', ddd: '47' },
+  { phoneNumber: '+5548991230001', ddd: '48' },
+  { phoneNumber: '+5548992340002', ddd: '48' },
+  { phoneNumber: '+5551991230001', ddd: '51' },
+  { phoneNumber: '+5551992340002', ddd: '51' },
+  { phoneNumber: '+5554991230001', ddd: '54' },
+  { phoneNumber: '+5561991230001', ddd: '61' },
+  { phoneNumber: '+5561992340002', ddd: '61' },
+  { phoneNumber: '+5562991230001', ddd: '62' },
+  { phoneNumber: '+5571991230001', ddd: '71' },
+  { phoneNumber: '+5571992340002', ddd: '71' },
+  { phoneNumber: '+5581991230001', ddd: '81' },
+  { phoneNumber: '+5581992340002', ddd: '81' },
+  { phoneNumber: '+5585991230001', ddd: '85' },
+  { phoneNumber: '+5585992340002', ddd: '85' },
+  { phoneNumber: '+5591991230001', ddd: '91' },
+  { phoneNumber: '+5592991230001', ddd: '92' },
+]
+
+function formatBRPhone(raw: string): string {
+  const digits = raw.replace(/\D/g, '')
+  if (digits.startsWith('55') && digits.length >= 12) {
+    const ddd = digits.slice(2, 4)
+    const num = digits.slice(4)
+    if (num.length === 9) return `(${ddd}) ${num.slice(0, 5)}-${num.slice(5)}`
+    return `(${ddd}) ${num.slice(0, 4)}-${num.slice(4)}`
+  }
+  return raw
 }
 
 function CopyButton({ text }: { text: string }) {
@@ -40,6 +136,8 @@ export function StepChannels({ data, update, onNext, onBack }: Props) {
   const [evolutionVerifying, setEvolutionVerifying] = useState(false)
   const [evolutionVerifyError, setEvolutionVerifyError] = useState('')
   const [evolutionQrCode, setEvolutionQrCode] = useState('')
+  const [dddSearch, setDddSearch] = useState('')
+  const [searchResults, setSearchResults] = useState<PhoneNumberOption[] | null>(null)
 
   const webhookUrl = `${window.location.origin.replace('5173', '3001')}/api/whatsapp/meta-webhook`
   const verifyToken = 'ai-receptionist-verify-2024'
@@ -50,6 +148,61 @@ export function StepChannels({ data, update, onNext, onBack }: Props) {
     enabled: data.phoneEnabled,
     staleTime: 60_000,
   })
+
+  useEffect(() => {
+    if (!data.phoneEnabled) {
+      setDddSearch('')
+      setSearchResults(null)
+    }
+  }, [data.phoneEnabled])
+
+  const buildOptions = (ddd: string): PhoneNumberOption[] => {
+    const realFiltered: PhoneNumberOption[] = (twilioNumbers ?? [])
+      .filter(n => n.phoneNumber.replace(/\D/g, '').slice(2, 4) === ddd)
+      .map(n => ({
+        sid: n.sid,
+        phoneNumber: n.phoneNumber,
+        region: DDD_REGIONS[ddd] ?? `DDD ${ddd}`,
+        isMock: false,
+      }))
+
+    const realPhones = new Set(realFiltered.map(n => n.phoneNumber))
+
+    const mockFiltered: PhoneNumberOption[] = MOCK_POOL
+      .filter(m => m.ddd === ddd && !realPhones.has(m.phoneNumber))
+      .map((m, i) => ({
+        sid: `mock-${m.ddd}-${String(i + 1).padStart(3, '0')}`,
+        phoneNumber: m.phoneNumber,
+        region: DDD_REGIONS[m.ddd] ?? `DDD ${m.ddd}`,
+        isMock: true,
+      }))
+
+    return [...realFiltered, ...mockFiltered]
+  }
+
+  const handleSearch = () => {
+    if (dddSearch.length < 2) return
+    setSearchResults(buildOptions(dddSearch))
+  }
+
+  const allOptions = (): PhoneNumberOption[] => {
+    const real: PhoneNumberOption[] = (twilioNumbers ?? []).map(n => {
+      const ddd = n.phoneNumber.replace(/\D/g, '').slice(2, 4)
+      return { sid: n.sid, phoneNumber: n.phoneNumber, region: DDD_REGIONS[ddd] ?? `DDD ${ddd}`, isMock: false }
+    })
+    const realPhones = new Set(real.map(n => n.phoneNumber))
+    const mocks: PhoneNumberOption[] = MOCK_POOL.map((m, i) => ({
+      sid: `mock-${m.ddd}-${String(i + 1).padStart(3, '0')}`,
+      phoneNumber: m.phoneNumber,
+      region: DDD_REGIONS[m.ddd] ?? `DDD ${m.ddd}`,
+      isMock: true,
+    })).filter(m => !realPhones.has(m.phoneNumber))
+    return [...real, ...mocks]
+  }
+
+  const selectedOption = data.phoneNumberSid
+    ? allOptions().find(n => n.sid === data.phoneNumberSid)
+    : undefined
 
   const handleVerify = async () => {
     if (!data.metaPhoneNumberId || !data.metaAccessToken) return
@@ -85,7 +238,7 @@ export function StepChannels({ data, update, onNext, onBack }: Props) {
 
   const canProceed =
     (data.phoneEnabled || data.whatsappEnabled) &&
-    (!data.phoneEnabled || !data.phoneNumberSid === false || (twilioNumbers?.length ?? 0) === 0) &&
+    (!data.phoneEnabled || !!data.phoneNumberSid) &&
     (!data.whatsappEnabled || data.whatsappVerified)
 
   return (
@@ -119,35 +272,107 @@ export function StepChannels({ data, update, onNext, onBack }: Props) {
 
         {data.phoneEnabled && (
           <div className="pl-2">
-            <div className="card p-4 space-y-3">
-              <label className="text-sm font-medium text-gray-300 block">Número Twilio para este agente</label>
+            <div className="card p-4 space-y-4">
+              <div>
+                <label className="text-sm font-medium text-gray-300 block mb-1">Escolha um número de telefone</label>
+                <p className="text-xs text-gray-500">Digite o DDD para ver os números disponíveis na sua região.</p>
+              </div>
+
               {numbersLoading ? (
                 <div className="flex items-center gap-2 text-sm text-gray-400">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Carregando números…
+                  <Loader2 className="h-4 w-4 animate-spin" /> Carregando números disponíveis…
                 </div>
-              ) : twilioNumbers && twilioNumbers.length > 0 ? (
+              ) : (
                 <>
-                  <select
-                    value={data.phoneNumberSid}
-                    onChange={e => update({ phoneNumberSid: e.target.value })}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:border-primary focus:ring-1 focus:ring-primary/50 outline-none"
-                  >
-                    <option value="">Escolha um número…</option>
-                    {twilioNumbers.map(n => (
-                      <option key={n.sid} value={n.sid}>{n.phoneNumber} — {n.friendlyName}</option>
-                    ))}
-                  </select>
-                  {data.phoneNumberSid && (
-                    <div className="flex items-center gap-2 text-xs text-primary">
-                      <CheckCircle className="h-3.5 w-3.5" /> Número selecionado
+                  {/* DDD search input */}
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 pointer-events-none select-none">+55</span>
+                      <input
+                        value={dddSearch}
+                        onChange={e => {
+                          setDddSearch(e.target.value.replace(/\D/g, '').slice(0, 2))
+                          setSearchResults(null)
+                        }}
+                        onKeyDown={e => e.key === 'Enter' && dddSearch.length >= 2 && handleSearch()}
+                        placeholder="17"
+                        maxLength={2}
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-12 pr-3 py-2 text-sm font-mono text-gray-100 placeholder-gray-600 focus:border-primary focus:ring-1 focus:ring-primary/50 outline-none"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleSearch}
+                      disabled={dddSearch.length < 2}
+                      className="btn-primary text-sm px-4 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      <Search className="h-4 w-4" /> Buscar
+                    </button>
+                  </div>
+
+                  {/* Search results */}
+                  {searchResults !== null && (
+                    <div className="space-y-2">
+                      {searchResults.length === 0 ? (
+                        <div className="text-center py-6 text-sm text-gray-500">
+                          Nenhum número disponível para o DDD {dddSearch}
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-xs text-gray-500">
+                            {searchResults.length} número{searchResults.length > 1 ? 's' : ''} disponíve{searchResults.length > 1 ? 'is' : 'l'} — DDD {dddSearch} · {DDD_REGIONS[dddSearch] ?? ''}
+                          </p>
+                          <div className="max-h-56 overflow-y-auto space-y-2 pr-1">
+                            {searchResults.map(n => (
+                              <button
+                                key={n.sid}
+                                type="button"
+                                onClick={() => update({ phoneNumberSid: n.sid })}
+                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left ${
+                                  data.phoneNumberSid === n.sid
+                                    ? 'border-primary bg-primary/10'
+                                    : 'border-gray-700 bg-gray-800/50 hover:border-gray-600 hover:bg-gray-800'
+                                }`}
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-mono font-medium text-white">{formatBRPhone(n.phoneNumber)}</p>
+                                  <p className="text-xs text-gray-500 mt-0.5">{n.region}</p>
+                                </div>
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  {!n.isMock && (
+                                    <span className="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full font-medium">Ativo</span>
+                                  )}
+                                  {data.phoneNumberSid === n.sid
+                                    ? <CheckCircle className="h-4 w-4 text-primary" />
+                                    : <div className="h-4 w-4 rounded-full border border-gray-600" />
+                                  }
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Selected number summary (after clearing search) */}
+                  {data.phoneNumberSid && searchResults === null && selectedOption && (
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-primary/10 border border-primary/30">
+                      <CheckCircle className="h-4 w-4 text-primary flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-mono font-medium text-white">{formatBRPhone(selectedOption.phoneNumber)}</p>
+                        <p className="text-xs text-gray-500">{selectedOption.region}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => { update({ phoneNumberSid: '' }); setSearchResults(null) }}
+                        className="text-xs text-gray-500 hover:text-gray-300 transition-colors flex-shrink-0"
+                      >
+                        Alterar
+                      </button>
                     </div>
                   )}
                 </>
-              ) : (
-                <div className="flex items-start gap-3 bg-yellow-500/10 border border-yellow-500/25 rounded-xl px-4 py-3 text-sm text-yellow-300">
-                  <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                  <div>Nenhum número encontrado no Twilio. Configure depois em <strong>Configurações → Telefone</strong>.</div>
-                </div>
               )}
             </div>
           </div>
@@ -178,6 +403,35 @@ export function StepChannels({ data, update, onNext, onBack }: Props) {
         {/* ── WhatsApp Cloud API setup ── */}
         {data.whatsappEnabled && !data.whatsappVerified && (
           <div className="pl-2 space-y-3">
+
+            {/* Pegadinhas comuns — leia antes */}
+            <div className="card border-yellow-500/40 bg-yellow-500/5 p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-yellow-400 flex-shrink-0" />
+                <p className="text-sm font-semibold text-yellow-200">Antes de começar — duas pegadinhas que travam quase todo mundo</p>
+              </div>
+
+              <div className="space-y-2">
+                <div className="rounded-lg bg-gray-900/60 border border-yellow-500/20 px-3 py-2.5">
+                  <p className="text-xs font-semibold text-yellow-200 mb-1">1. "Inscrever-se" / "Subscribe" não significa que está inscrito</p>
+                  <p className="text-xs text-gray-300 leading-relaxed">
+                    Na Meta, <strong className="text-yellow-300">tudo aparece com o botão "Inscrever-se" por padrão</strong> — e isso confunde.
+                    Se você está vendo "Inscrever-se" no evento <code className="bg-gray-800 px-1 rounded text-yellow-300">messages</code>, você <strong>NÃO está inscrito ainda</strong> — clique nele.
+                    Quando o botão virar <strong className="text-green-300">"Cancelar inscrição"</strong>, aí sim está inscrito.
+                  </p>
+                </div>
+
+                <div className="rounded-lg bg-gray-900/60 border border-yellow-500/20 px-3 py-2.5">
+                  <p className="text-xs font-semibold text-yellow-200 mb-1 flex items-center gap-1.5">
+                    <Rocket className="h-3 w-3" /> 2. Publique o app antes de usar com seu número real
+                  </p>
+                  <p className="text-xs text-gray-300 leading-relaxed">
+                    Por padrão o app fica em modo <strong className="text-yellow-300">Desenvolvimento</strong>, que só funciona com o número de teste da Meta.
+                    Em <strong className="text-gray-200">Configurações Básicas</strong>, mude o app para <strong className="text-green-300">Em Operação (Live)</strong> antes de testar com seus clientes.
+                  </p>
+                </div>
+              </div>
+            </div>
 
             {/* Step guide */}
             <div className="card p-5 space-y-4">
@@ -225,7 +479,10 @@ export function StepChannels({ data, update, onNext, onBack }: Props) {
                       <li>Clique em <strong className="text-gray-200">Assinar webhook</strong> (ou "Configure a webhook")</li>
                       <li>Cole a URL e o token abaixo</li>
                       <li>Confirme — o Meta vai testar a conexão</li>
-                      <li>Após confirmar, assine o evento <strong className="text-gray-200">messages</strong></li>
+                      <li>
+                        Na lista de eventos, clique em <strong className="text-yellow-300">Inscrever-se</strong> ao lado de <code className="bg-gray-800 px-1 rounded">messages</code>.
+                        Confirme que o botão virou <strong className="text-green-300">"Cancelar inscrição"</strong> — só assim você está realmente inscrito.
+                      </li>
                     </ol>
                     <div className="space-y-2">
                       <div className="rounded-lg bg-gray-900 border border-gray-700 px-3 py-2">
