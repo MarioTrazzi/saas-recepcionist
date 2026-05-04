@@ -20,23 +20,52 @@ interface AuthStore {
   setToken: (token: string) => void
 }
 
+function decodeJwt(token: string): any {
+  try {
+    const payload = token.split('.')[1]
+    return JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))
+  } catch {
+    return null
+  }
+}
+
+function userFromPayload(payload: any): User | null {
+  if (!payload?.sub) return null
+  return {
+    id: payload.sub,
+    tenantId: payload.tenantId,
+    email: payload.email,
+    name: payload.name || payload.email?.split('@')[0] || '',
+    role: payload.role,
+  }
+}
+
+function isTokenValid(token: string): boolean {
+  const payload = decodeJwt(token)
+  if (!payload) return false
+  // exp is in seconds
+  return payload.exp ? payload.exp * 1000 > Date.now() : true
+}
+
 export const useAuthStore = create<AuthStore>((set, get) => ({
   user: null,
-  token: localStorage.getItem('token'),
+  token: null,
 
   isAuthenticated: () => !!get().token,
 
-  init: async () => {
+  init: () => {
     const token = localStorage.getItem('token')
-    if (token) {
-      try {
-        const user = await authApi.me()
-        set({ user, token })
-      } catch {
-        localStorage.removeItem('token')
-        set({ user: null, token: null })
-      }
+    if (!token) return
+
+    if (!isTokenValid(token)) {
+      localStorage.removeItem('token')
+      set({ user: null, token: null })
+      return
     }
+
+    const payload = decodeJwt(token)
+    const user = userFromPayload(payload)
+    set({ token, user })
   },
 
   login: async (email, password) => {
@@ -58,6 +87,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
   setToken: (token: string) => {
     localStorage.setItem('token', token)
-    set({ token })
+    const payload = decodeJwt(token)
+    const user = userFromPayload(payload)
+    set({ token, user })
   },
 }))

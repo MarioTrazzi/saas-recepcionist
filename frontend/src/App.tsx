@@ -22,7 +22,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   const init = useAuthStore(s => s.init)
-  useEffect(() => { init() }, [])
+  useEffect(() => { init() }, [init])
 
   return (
     <Routes>

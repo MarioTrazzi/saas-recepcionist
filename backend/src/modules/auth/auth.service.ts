@@ -72,6 +72,7 @@ export class AuthService {
       sub: user.id,
       tenantId: user.tenantId,
       email: user.email,
+      name: user.name || name,
       role: user.role,
     })
 
@@ -80,7 +81,7 @@ export class AuthService {
 
   async register(dto: { tenantName: string; email: string; password: string; ownerName: string }) {
     const { tenant, user } = await this.tenantsService.createTenantWithOwner(dto)
-    const token = this.jwtService.sign({ sub: user.id, tenantId: tenant.id, email: user.email, role: user.role })
+    const token = this.jwtService.sign({ sub: user.id, tenantId: tenant.id, email: user.email, name: user.name, role: user.role })
     return { token, user: { id: user.id, name: user.name, email: user.email, role: user.role }, tenant }
   }
 
@@ -91,7 +92,7 @@ export class AuthService {
     const valid = await bcrypt.compare(password, user.password)
     if (!valid) throw new UnauthorizedException('Invalid credentials')
 
-    const token = this.jwtService.sign({ sub: user.id, tenantId: user.tenantId, email: user.email, role: user.role })
+    const token = this.jwtService.sign({ sub: user.id, tenantId: user.tenantId, email: user.email, name: user.name, role: user.role })
     return { token, user: { id: user.id, name: user.name, email: user.email, role: user.role, tenantId: user.tenantId } }
   }
 }
