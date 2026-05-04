@@ -243,6 +243,34 @@ export default function SettingsPage() {
                 </div>
                 <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
               </div>
+
+              {/* Status/Error alert if credits esgotados or other issues */}
+              {waStatus?.error && (
+                <div className={`flex items-start gap-3 p-4 rounded-xl border ${waStatus.error.includes('131042') ? 'bg-red-500/8 border-red-500/30' : 'bg-yellow-500/8 border-yellow-500/30'}`}>
+                  <AlertCircle className={`h-5 w-5 flex-shrink-0 mt-0.5 ${waStatus.error.includes('131042') ? 'text-red-400' : 'text-yellow-400'}`} />
+                  <div className="flex-1">
+                    <p className={`text-sm font-semibold ${waStatus.error.includes('131042') ? 'text-red-300' : 'text-yellow-300'}`}>
+                      {waStatus.error.includes('131042') ? 'Créditos da Meta esgotados' : 'Atenção na conexão'}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">
+                      {waStatus.error.includes('131042') 
+                        ? 'A Meta não conseguiu cobrar seu cartão cadastrado. O atendimento oficial foi pausado e está operando via fallback (se configurado).' 
+                        : waStatus.error}
+                    </p>
+                    {waStatus.error.includes('131042') && (
+                      <a 
+                        href="https://business.facebook.com/settings/whatsapp-business-accounts/" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-red-400 hover:text-red-300 transition-colors mt-2"
+                      >
+                        Resolver na Meta <ExternalLink className="h-2.5 w-2.5" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <button
                 onClick={() => setShowWaSetup(s => !s)}
                 className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
@@ -267,15 +295,17 @@ export default function SettingsPage() {
                   <KeyRound className="h-4 w-4 text-green-400" />
                   <p className="text-sm font-medium text-gray-200">Configure o webhook no Meta Developers</p>
                   <a
-                    href="https://developers.facebook.com/apps/"
+                    href="https://developers.facebook.com/apps/1456857732642595/use_cases/?business_id=1108860636899953"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="ml-auto text-xs text-gray-500 hover:text-gray-300 flex items-center gap-1 transition-colors"
+                    className="ml-auto text-xs text-primary hover:text-primary/80 flex items-center gap-1 transition-colors font-medium"
                   >
-                    <ExternalLink className="h-3 w-3" /> Abrir Meta
+                    <ExternalLink className="h-3 w-3" /> Abrir Painel da Meta
                   </a>
                 </div>
-                <p className="text-xs text-gray-500">Em <strong className="text-gray-300">WhatsApp → Configuração → Webhooks</strong>, use estes valores:</p>
+                <p className="text-xs text-gray-500">
+                  Navegue em: <strong className="text-gray-300">Casos de uso → WhatsApp → Configurações → Webhooks</strong>. Use estes valores:
+                </p>
                 <div className="space-y-2">
                   <div className="rounded-lg bg-gray-900 border border-gray-700 px-3 py-2">
                     <p className="text-[10px] text-gray-500 mb-1">URL do webhook</p>
@@ -292,7 +322,12 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 </div>
-                <p className="text-xs text-gray-500">Assine o evento <strong className="text-gray-300">messages</strong> após salvar.</p>
+                <div className="flex items-start gap-2 bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-3">
+                  <AlertCircle className="h-3.5 w-3.5 text-yellow-500 flex-shrink-0 mt-0.5" />
+                  <p className="text-[11px] text-gray-400 leading-relaxed">
+                    Após salvar, clique em <strong className="text-yellow-500">Inscrever-se</strong> ao lado do campo <strong className="text-gray-200">messages</strong> na tabela de campos de objeto. O botão deve mudar para "Cancelar inscrição" para estar ativo.
+                  </p>
+                </div>
               </div>
 
               {/* Credentials */}
@@ -321,7 +356,8 @@ export default function SettingsPage() {
 
                 {waError && (
                   <div className="flex items-start gap-2 text-xs text-red-400 bg-red-500/8 border border-red-500/25 rounded-lg px-3 py-2">
-                    <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" /> {waError}
+                    <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" /> 
+                    {waError.includes('131042') ? 'Créditos da Meta esgotados. Verifique seu cartão na Meta Business.' : waError}
                   </div>
                 )}
 
