@@ -31,6 +31,7 @@ export interface WizardData {
   phoneEnabled: boolean
   phoneNumberSid: string
   whatsappEnabled: boolean
+  metaAppId: string
   metaPhoneNumberId: string
   metaAccessToken: string
   whatsappVerified: boolean
@@ -59,6 +60,7 @@ const EMPTY: WizardData = {
   phoneEnabled: true,
   phoneNumberSid: '',
   whatsappEnabled: false,
+  metaAppId: '',
   metaPhoneNumberId: '',
   metaAccessToken: '',
   whatsappVerified: false,

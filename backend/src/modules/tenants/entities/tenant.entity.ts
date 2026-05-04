@@ -77,6 +77,9 @@ export class Tenant {
   @Column({ nullable: true })
   metaAccessToken: string
 
+  @Column({ nullable: true })
+  metaAppId: string
+
   @Column({ type: 'boolean', default: false })
   phoneChannelEnabled: boolean
 

@@ -52,8 +52,8 @@ export const phoneApi = {
 }
 
 export const whatsappApi = {
-  setupCloudApi: (phoneNumberId: string, accessToken: string) =>
-    api.post('/whatsapp/setup-cloudapi', { phoneNumberId, accessToken }).then(r => r.data),
+  setupCloudApi: (phoneNumberId: string, accessToken: string, appId?: string) =>
+    api.post('/whatsapp/setup-cloudapi', { phoneNumberId, accessToken, appId }).then(r => r.data),
   setupEvolutionFallback: (evolutionApiUrl: string, evolutionApiKey: string, phoneNumber: string) =>
     api.post('/whatsapp/setup-evolution-fallback', { evolutionApiUrl, evolutionApiKey, phoneNumber }).then(r => r.data),
   clearUnanswered: () => api.post('/whatsapp/clear-unanswered').then(r => r.data),

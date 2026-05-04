@@ -52,9 +52,9 @@ export class WhatsappController {
   @ApiBearerAuth()
   async setupCloudApi(
     @Request() req,
-    @Body() body: { phoneNumberId: string; accessToken: string },
+    @Body() body: { phoneNumberId: string; accessToken: string; appId?: string },
   ) {
-    return this.svc.setupCloudApi(req.user.tenantId, body.phoneNumberId, body.accessToken)
+    return this.svc.setupCloudApi(req.user.tenantId, body.phoneNumberId, body.accessToken, body.appId)
   }
 
   // ── Authenticated: configure Evolution API fallback ──────────────────────

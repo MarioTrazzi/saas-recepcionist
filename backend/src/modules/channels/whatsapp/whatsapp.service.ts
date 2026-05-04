@@ -33,7 +33,7 @@ export class WhatsappService {
     this.logger.log(`[${tenantId}] Admin updated Meta access token${twilioPhone ? ' + Twilio phone' : ''}`)
   }
 
-  async setupCloudApi(tenantId: string, phoneNumberId: string, accessToken: string): Promise<{ phoneNumber: string }> {
+  async setupCloudApi(tenantId: string, phoneNumberId: string, accessToken: string, appId?: string): Promise<{ phoneNumber: string }> {
     // Validate credentials against Meta
     try {
       const { data } = await axios.get(
@@ -47,6 +47,7 @@ export class WhatsappService {
       await this.tenantsService.update(tenantId, {
         metaPhoneNumberId: phoneNumberId,
         metaAccessToken: accessToken,
+        metaAppId: appId,
         whatsappPhoneNumber: phoneNumber,
         whatsappChannelEnabled: true,
         whatsappInstanceName: null,

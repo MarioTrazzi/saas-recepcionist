@@ -209,7 +209,7 @@ export function StepChannels({ data, update, onNext, onBack }: Props) {
     setVerifying(true)
     setVerifyError('')
     try {
-      await whatsappApi.setupCloudApi(data.metaPhoneNumberId, data.metaAccessToken)
+      await whatsappApi.setupCloudApi(data.metaPhoneNumberId, data.metaAccessToken, data.metaAppId)
       update({ whatsappVerified: true })
     } catch (e: any) {
       setVerifyError(e?.response?.data?.message || 'Credenciais inválidas. Verifique o Phone Number ID e o Access Token.')
@@ -549,6 +549,16 @@ export function StepChannels({ data, update, onNext, onBack }: Props) {
                   <span className="flex-shrink-0 h-5 w-5 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center text-[10px] font-bold mt-0.5">4</span>
                   <div className="flex-1 space-y-3">
                     <p className="text-sm text-gray-200 font-medium">Cole suas credenciais e verifique</p>
+
+                    <div>
+                      <label className="text-xs text-gray-400 block mb-1">Meta App ID (opcional)</label>
+                      <input
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 font-mono placeholder-gray-600 focus:border-green-500 focus:ring-1 focus:ring-green-500/30 outline-none"
+                        placeholder="1456857732642595"
+                        value={data.metaAppId}
+                        onChange={e => update({ metaAppId: e.target.value.trim(), whatsappVerified: false })}
+                      />
+                    </div>
 
                     <div>
                       <label className="text-xs text-gray-400 block mb-1">Phone Number ID</label>

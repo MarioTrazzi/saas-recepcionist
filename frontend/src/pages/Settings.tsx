@@ -37,6 +37,7 @@ export default function SettingsPage() {
 
   // WhatsApp Cloud API state
   const [showWaSetup, setShowWaSetup] = useState(false)
+  const [appId, setAppId] = useState('')
   const [phoneNumberId, setPhoneNumberId] = useState('')
   const [accessToken, setAccessToken] = useState('')
   const [waVerifying, setWaVerifying] = useState(false)
@@ -68,8 +69,9 @@ export default function SettingsPage() {
     setWaVerifying(true)
     setWaError('')
     try {
-      await whatsappApi.setupCloudApi(phoneNumberId, accessToken)
+      await whatsappApi.setupCloudApi(phoneNumberId, accessToken, appId)
       setShowWaSetup(false)
+      setAppId('')
       setPhoneNumberId('')
       setAccessToken('')
       qc.invalidateQueries({ queryKey: ['whatsapp-status'] })
@@ -295,7 +297,7 @@ export default function SettingsPage() {
                   <KeyRound className="h-4 w-4 text-green-400" />
                   <p className="text-sm font-medium text-gray-200">Configure o webhook no Meta Developers</p>
                   <a
-                    href="https://developers.facebook.com/apps/1456857732642595/use_cases/?business_id=1108860636899953"
+                    href={tenant?.metaAppId ? `https://developers.facebook.com/apps/${tenant.metaAppId}/use_cases/` : 'https://developers.facebook.com/apps/'}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="ml-auto text-xs text-primary hover:text-primary/80 flex items-center gap-1 transition-colors font-medium"
@@ -332,6 +334,16 @@ export default function SettingsPage() {
 
               {/* Credentials */}
               <div className="space-y-3">
+                <div>
+                  <label className="text-sm text-gray-300 block mb-1.5">Meta App ID (opcional)</label>
+                  <input
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 font-mono placeholder-gray-600 focus:border-green-500 focus:ring-1 focus:ring-green-500/30 outline-none"
+                    placeholder="1456857732642595"
+                    value={appId}
+                    onChange={e => { setAppId(e.target.value.trim()); setWaError('') }}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">O ID do seu App no Meta Developers (usado para gerar links diretos).</p>
+                </div>
                 <div>
                   <label className="text-sm text-gray-300 block mb-1.5">Phone Number ID</label>
                   <input
