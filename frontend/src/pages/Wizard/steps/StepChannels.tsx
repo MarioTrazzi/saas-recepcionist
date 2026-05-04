@@ -735,11 +735,31 @@ export function StepChannels({ data, update, onNext, onBack, onOpenSupport }: Pr
                     <p className="text-sm font-semibold text-white">Configure a Evolution API</p>
                   </div>
 
-                  <div className="rounded-lg bg-blue-500/10 border border-blue-500/25 p-3">
+                  <div className="rounded-lg bg-blue-500/10 border border-blue-500/25 p-3 space-y-2">
                     <p className="text-xs text-blue-300">
                       A Evolution API é uma alternativa ao WhatsApp Business API oficial. Ela usa o protocolo WhatsApp Web (Baileys) e <strong>não consome créditos da Meta</strong>.
                       Configure sua própria instância ou use um serviço hospedado.
                     </p>
+                    <div className="flex flex-wrap gap-3">
+                      <a
+                        href="https://evolution-api.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                        onClick={e => e.stopPropagation()}
+                      >
+                        <ExternalLink className="h-3 w-3" /> Site oficial
+                      </a>
+                      <a
+                        href="https://doc.evolution-api.com/v2/pt/get-started/introduction"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                        onClick={e => e.stopPropagation()}
+                      >
+                        <ExternalLink className="h-3 w-3" /> Documentação
+                      </a>
+                    </div>
                   </div>
 
                   <div>
@@ -750,6 +770,18 @@ export function StepChannels({ data, update, onNext, onBack, onOpenSupport }: Pr
                       value={data.evolutionApiUrl}
                       onChange={e => update({ evolutionApiUrl: e.target.value.trim(), evolutionVerified: false })}
                     />
+                    <p className="text-[10px] text-gray-500 mt-1">
+                      URL da sua instância. Se usar serviço hospedado, está no painel do seu provedor.{' '}
+                      <a
+                        href="https://evolution-api.com/#pricing"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-500 hover:text-blue-400 transition-colors"
+                        onClick={e => e.stopPropagation()}
+                      >
+                        Ver provedores hospedados →
+                      </a>
+                    </p>
                   </div>
 
                   <div>
@@ -761,6 +793,10 @@ export function StepChannels({ data, update, onNext, onBack, onOpenSupport }: Pr
                       value={data.evolutionApiKey}
                       onChange={e => update({ evolutionApiKey: e.target.value.trim(), evolutionVerified: false })}
                     />
+                    <p className="text-[10px] text-gray-500 mt-1">
+                      Chave global definida na instalação. Disponível no painel do seu provedor ou em{' '}
+                      <code className="bg-gray-800 px-1 rounded text-gray-400">{data.evolutionApiUrl || 'sua-url'}/manager</code>
+                    </p>
                   </div>
 
                   <div>
@@ -771,6 +807,9 @@ export function StepChannels({ data, update, onNext, onBack, onOpenSupport }: Pr
                       value={data.evolutionPhone}
                       onChange={e => update({ evolutionPhone: e.target.value.trim(), evolutionVerified: false })}
                     />
+                    <p className="text-[10px] text-gray-500 mt-1">
+                      Número do WhatsApp que será conectado. Formato: código do país + DDD + número (sem espaços ou símbolos).
+                    </p>
                   </div>
 
                   {evolutionVerifyError && (

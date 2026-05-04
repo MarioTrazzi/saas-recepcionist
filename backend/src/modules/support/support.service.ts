@@ -38,11 +38,18 @@ Você precisa CLICAR em "Inscrever-se" no evento "messages". Senão, o agente N�
 
 ### 5. Publicar o App (passo que muita gente esquece)
 Por padrão o app fica em modo Desenvolvimento/Testing e SÓ FUNCIONA com o número de teste da Meta.
-Para usar com seu número real:
+Para usar com seu número real, você precisa publicar o app. Existem dois caminhos:
+
+**Caminho 1 — botão "Publicar" no menu lateral direito (mais rápido):**
+No Meta Developers, no menu lateral direito da tela do app, existe um botão **"Publicar"**. Clique nele. Após publicado, o status exibido será **"Published"** (não "Em Operação" — esse rótulo pode não aparecer em português).
+
+**Caminho 2 — via Configurações Básicas:**
 1. No Meta Developers: App Review → Permissões e Recursos
 2. Solicite as permissões: whatsapp_business_messaging e whatsapp_business_management
 3. Em "Configurações Básicas", troque o app de **Desenvolvimento** para **Em Operação** (Live)
 4. Para apps simples sem usar dados sensíveis, geralmente não precisa de revisão pra começar a enviar/receber
+
+**Resumo:** procure o botão "Publicar" na barra lateral direita. Depois de clicar, o status fica **"Published"**. Pronto.
 
 ---
 
@@ -63,7 +70,7 @@ Solução: confira que o Phone Number ID pertence ao MESMO app onde o token foi 
 4. Os créditos gratuitos da Meta acabaram? (1.000 conversas/mês grátis)
 
 ### App em modo Desenvolvimento não envia para números reais
-Solução: publique o app (Live) e/ou adicione o número de destino como número de teste em WhatsApp → Configuração da API → "Para".
+Solução: publique o app clicando no botão **"Publicar"** no menu lateral direito do Meta Developers. Após publicado, o status fica **"Published"**. Alternativamente, adicione o número de destino como número de teste em WhatsApp → Configuração da API → "Para".
 
 ### Erro 403 access_denied no Google
 Solução: adicione as URIs de redirect no Google Cloud Console → Credenciais → OAuth 2.0 Client.

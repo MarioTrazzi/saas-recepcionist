@@ -27,7 +27,7 @@ export interface WizardData {
   systemPrompt: string
   tone: string
   language: string
-  knowledgeItems: Array<{ title: string; content: string }>
+  knowledgeItems: Array<{ title: string; content: string; _saved?: boolean }>
   phoneEnabled: boolean
   phoneNumberSid: string
   whatsappEnabled: boolean
@@ -102,7 +102,20 @@ export default function WizardPage() {
 
   const update = (partial: Partial<WizardData>) => setData(d => ({ ...d, ...partial }))
 
-  const next = () => setStep(s => Math.min(s + 1, 6))
+  const next = async () => {
+    if (step === 3) {
+      const unsaved = data.knowledgeItems.filter(item => !item._saved)
+      if (unsaved.length > 0) {
+        try {
+          await Promise.all(unsaved.map(item => knowledgeApi.create({ title: item.title, content: item.content })))
+          update({ knowledgeItems: data.knowledgeItems.map(item => ({ ...item, _saved: true })) })
+        } catch (e) {
+          console.warn('Failed to save knowledge items:', e)
+        }
+      }
+    }
+    setStep(s => Math.min(s + 1, 6))
+  }
   const back = () => setStep(s => Math.max(s - 1, 1))
 
   const finish = async () => {
@@ -122,8 +135,9 @@ export default function WizardPage() {
         isActive: true,
       })
 
-      if (data.knowledgeItems.length > 0) {
-        await Promise.allSettled(data.knowledgeItems.map(item => knowledgeApi.create(item)))
+      const unsavedItems = data.knowledgeItems.filter(item => !item._saved)
+      if (unsavedItems.length > 0) {
+        await Promise.allSettled(unsavedItems.map(item => knowledgeApi.create({ title: item.title, content: item.content })))
       }
 
       if (data.calendarMode === 'builtin') {
