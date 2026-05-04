@@ -95,6 +95,45 @@ export class AgentService {
     return prompt
   }
 
+  async generateTips(systemPrompt: string, agentName: string): Promise<string[]> {
+    if (!this.openai) return []
+
+    const model = this.configService.get('GEMINI_API_KEY')
+      ? (this.configService.get('GEMINI_MODEL') || 'gemini-2.0-flash')
+      : this.configService.get('GROQ_API_KEY')
+      ? (this.configService.get('GROQ_MODEL') || 'llama-3.3-70b-versatile')
+      : (this.configService.get('OPENAI_MODEL') || 'gpt-4o-mini')
+
+    try {
+      const res = await this.openai.chat.completions.create({
+        model,
+        temperature: 0.5,
+        max_tokens: 600,
+        messages: [
+          {
+            role: 'system',
+            content: `Você é um especialista em otimização de agentes de atendimento por IA.
+Analise as instruções do agente abaixo e gere exatamente 5 dicas práticas e específicas para melhorar o atendimento.
+Cada dica deve indicar algo concreto que o usuário pode adicionar à base de conhecimento do agente para ele responder melhor.
+Responda SOMENTE com um array JSON de 5 strings, sem markdown, sem explicações. Exemplo:
+["Dica 1", "Dica 2", "Dica 3", "Dica 4", "Dica 5"]`,
+          },
+          {
+            role: 'user',
+            content: `Nome do agente: ${agentName}\n\nInstruções:\n${systemPrompt}`,
+          },
+        ],
+      })
+
+      const raw = res.choices[0]?.message?.content?.trim() || '[]'
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed)) return parsed.slice(0, 5).filter(t => typeof t === 'string')
+      return []
+    } catch {
+      return []
+    }
+  }
+
   async detectHandoffIntent(message: string): Promise<boolean> {
     const keywords = ['humano', 'atendente', 'pessoa real', 'falar com alguém', 'transferir', 'gerente', 'responsável']
     return keywords.some(k => message.toLowerCase().includes(k))

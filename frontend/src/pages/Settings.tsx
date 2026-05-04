@@ -1,8 +1,9 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
-  Phone, MessageSquare, Zap,
+  Phone, MessageSquare, Zap, Bot,
   Wifi, Loader2, AlertCircle, CheckCircle, ChevronDown, Copy, Check, KeyRound, ExternalLink,
+  Save, User, FileText, GitMerge,
 } from 'lucide-react'
 
 function formatPhone(raw: string): string {
@@ -13,7 +14,7 @@ function formatPhone(raw: string): string {
     return `+1 (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`
   return raw
 }
-import { phoneApi, whatsappApi, tenantApi } from '@/lib/api'
+import { phoneApi, whatsappApi, tenantApi, agentApi } from '@/lib/api'
 import ElevenLabsAgentSection from '@/components/ElevenLabsAgentSection'
 
 function CopyButton({ text }: { text: string }) {
@@ -28,6 +29,21 @@ function CopyButton({ text }: { text: string }) {
 
 export default function SettingsPage() {
   const qc = useQueryClient()
+
+  // Agent config state
+  const [agentForm, setAgentForm] = useState({
+    agentName: '',
+    greetingMessage: '',
+    tone: 'friendly',
+    language: 'pt-BR',
+    systemPrompt: '',
+    handoffMode: 'none',
+    handoffPhone: '',
+    handoffWhatsapp: '',
+  })
+  const [agentSaving, setAgentSaving] = useState(false)
+  const [agentSaved, setAgentSaved] = useState(false)
+  const [agentError, setAgentError] = useState('')
 
   // Phone state
   const [showPhoneSetup, setShowPhoneSetup] = useState(false)
@@ -47,13 +63,13 @@ export default function SettingsPage() {
   const verifyToken = 'ai-receptionist-verify-2024'
 
   const { data: tenant, refetch: refetchTenant } = useQuery({ queryKey: ['tenant'], queryFn: tenantApi.getMe })
+  const { data: agentConfig } = useQuery({ queryKey: ['agent-config'], queryFn: agentApi.getConfig, retry: false })
   const { data: twilioNumbers = [], isLoading: loadingNumbers } = useQuery({
     queryKey: ['twilio-numbers'],
     queryFn: phoneApi.listNumbers,
     enabled: showPhoneSetup || !tenant?.twilioPhoneNumber,
     staleTime: 60_000,
   })
-
   const { data: waStatus, isLoading: checkingWa, refetch: recheckWa } = useQuery({
     queryKey: ['whatsapp-status'],
     queryFn: whatsappApi.status,
@@ -62,7 +78,39 @@ export default function SettingsPage() {
     staleTime: 30_000,
   })
 
+  // Populate agent form when config loads
+  useEffect(() => {
+    if (agentConfig) {
+      setAgentForm({
+        agentName: agentConfig.agentName || '',
+        greetingMessage: agentConfig.greetingMessage || '',
+        tone: agentConfig.tone || 'friendly',
+        language: agentConfig.language || 'pt-BR',
+        systemPrompt: agentConfig.systemPrompt || '',
+        handoffMode: agentConfig.handoffMode || 'none',
+        handoffPhone: agentConfig.handoffPhone || '',
+        handoffWhatsapp: agentConfig.handoffWhatsapp || '',
+      })
+    }
+  }, [agentConfig])
+
   const isConnected = waStatus?.connected === true
+
+  const saveAgentConfig = async () => {
+    setAgentSaving(true)
+    setAgentError('')
+    setAgentSaved(false)
+    try {
+      await agentApi.upsertConfig(agentForm)
+      qc.invalidateQueries({ queryKey: ['agent-config'] })
+      setAgentSaved(true)
+      setTimeout(() => setAgentSaved(false), 3000)
+    } catch (e: any) {
+      setAgentError(e?.response?.data?.message || 'Erro ao salvar. Tente novamente.')
+    } finally {
+      setAgentSaving(false)
+    }
+  }
 
   const connectCloudApi = async () => {
     if (!phoneNumberId || !accessToken) return
@@ -100,11 +148,167 @@ export default function SettingsPage() {
     }
   }
 
+  const handoffNeedsPhone = agentForm.handoffMode === 'phone' || agentForm.handoffMode === 'both'
+  const handoffNeedsWhatsapp = agentForm.handoffMode === 'whatsapp' || agentForm.handoffMode === 'both'
+
   return (
     <div className="p-8">
       <h1 className="text-2xl font-bold text-white mb-8">Configurações</h1>
 
       <div className="space-y-6">
+
+        {/* ── Agent Config ── */}
+        <div className="card p-6">
+          <h2 className="font-semibold text-white flex items-center gap-2 mb-5">
+            <Bot className="h-4 w-4 text-primary" /> Agente
+          </h2>
+
+          <div className="space-y-5">
+            {/* Identity */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <User className="h-3.5 w-3.5 text-gray-500" />
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Identidade</p>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm text-gray-300 block mb-1.5">Nome do agente</label>
+                  <input
+                    className="input"
+                    placeholder="Ex: Sofia, Carlos, Bia…"
+                    value={agentForm.agentName}
+                    onChange={e => setAgentForm(f => ({ ...f, agentName: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-300 block mb-1.5">Tom de voz</label>
+                  <div className="relative">
+                    <select
+                      className="input appearance-none pr-8"
+                      value={agentForm.tone}
+                      onChange={e => setAgentForm(f => ({ ...f, tone: e.target.value }))}
+                    >
+                      <option value="friendly">Amigável</option>
+                      <option value="professional">Profissional</option>
+                      <option value="formal">Formal</option>
+                    </select>
+                    <ChevronDown className="h-4 w-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="text-sm text-gray-300 block mb-1.5">Mensagem de saudação</label>
+                  <textarea
+                    className="input resize-none"
+                    rows={2}
+                    placeholder="Olá! Como posso ajudar você hoje?"
+                    value={agentForm.greetingMessage}
+                    onChange={e => setAgentForm(f => ({ ...f, greetingMessage: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-300 block mb-1.5">Idioma</label>
+                  <div className="relative">
+                    <select
+                      className="input appearance-none pr-8"
+                      value={agentForm.language}
+                      onChange={e => setAgentForm(f => ({ ...f, language: e.target.value }))}
+                    >
+                      <option value="pt-BR">Português (Brasil)</option>
+                      <option value="en-US">English (US)</option>
+                      <option value="es">Español</option>
+                    </select>
+                    <ChevronDown className="h-4 w-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* System Prompt */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <FileText className="h-3.5 w-3.5 text-gray-500" />
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Instruções do agente</p>
+              </div>
+              <textarea
+                className="input resize-none font-mono text-xs leading-relaxed"
+                rows={8}
+                placeholder="Descreva como o agente deve se comportar, o que pode e não pode dizer, como lidar com situações específicas…"
+                value={agentForm.systemPrompt}
+                onChange={e => setAgentForm(f => ({ ...f, systemPrompt: e.target.value }))}
+              />
+              <p className="text-xs text-gray-600 mt-1">Estas instruções definem o comportamento do agente em todas as conversas.</p>
+            </div>
+
+            {/* Handoff */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <GitMerge className="h-3.5 w-3.5 text-gray-500" />
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Transferência para humano</p>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm text-gray-300 block mb-1.5">Modo de transferência</label>
+                  <div className="relative">
+                    <select
+                      className="input appearance-none pr-8"
+                      value={agentForm.handoffMode}
+                      onChange={e => setAgentForm(f => ({ ...f, handoffMode: e.target.value }))}
+                    >
+                      <option value="none">Sem transferência</option>
+                      <option value="whatsapp">WhatsApp</option>
+                      <option value="phone">Telefone</option>
+                      <option value="both">WhatsApp + Telefone</option>
+                    </select>
+                    <ChevronDown className="h-4 w-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
+                </div>
+                {handoffNeedsPhone && (
+                  <div>
+                    <label className="text-sm text-gray-300 block mb-1.5">Telefone para transferência</label>
+                    <input
+                      className="input"
+                      placeholder="+5511999999999"
+                      value={agentForm.handoffPhone}
+                      onChange={e => setAgentForm(f => ({ ...f, handoffPhone: e.target.value.trim() }))}
+                    />
+                  </div>
+                )}
+                {handoffNeedsWhatsapp && (
+                  <div>
+                    <label className="text-sm text-gray-300 block mb-1.5">WhatsApp para transferência</label>
+                    <input
+                      className="input"
+                      placeholder="+5511999999999"
+                      value={agentForm.handoffWhatsapp}
+                      onChange={e => setAgentForm(f => ({ ...f, handoffWhatsapp: e.target.value.trim() }))}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {agentError && (
+              <div className="flex items-center gap-2 text-xs text-red-400 bg-red-500/8 border border-red-500/25 rounded-lg px-3 py-2">
+                <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" /> {agentError}
+              </div>
+            )}
+
+            <div className="flex items-center gap-3 pt-1">
+              <button
+                onClick={saveAgentConfig}
+                disabled={agentSaving || !agentForm.agentName.trim()}
+                className="btn-primary flex items-center gap-2 text-sm disabled:opacity-50"
+              >
+                {agentSaving
+                  ? <><Loader2 className="h-4 w-4 animate-spin" /> Salvando…</>
+                  : agentSaved
+                  ? <><CheckCircle className="h-4 w-4" /> Salvo!</>
+                  : <><Save className="h-4 w-4" /> Salvar configurações</>
+                }
+              </button>
+            </div>
+          </div>
+        </div>
 
         {/* Phone channel */}
         <div id="phone-channel-section" className="card p-6">
@@ -113,7 +317,6 @@ export default function SettingsPage() {
           </h2>
 
           {tenant?.twilioPhoneNumber ? (
-            /* Already configured */
             <div className="space-y-3">
               <div className="flex items-center gap-4 p-4 rounded-xl bg-primary/8 border border-primary/25">
                 <div className="h-10 w-10 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
@@ -136,13 +339,11 @@ export default function SettingsPage() {
               </button>
             </div>
           ) : (
-            /* Not configured yet */
             <p className="text-sm text-gray-400 mb-4">
               Selecione um número da sua conta Twilio para este agente atender ligações.
             </p>
           )}
 
-          {/* Number picker — shown when not configured or when changing */}
           {(!tenant?.twilioPhoneNumber || showPhoneSetup) && (
             <div className="mt-4 space-y-3">
               {loadingNumbers ? (
@@ -229,7 +430,6 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* Connected */}
           {!checkingWa && isConnected && (
             <div className="space-y-3">
               <div className="flex items-center gap-4 p-4 rounded-xl bg-green-500/8 border border-green-500/30">
@@ -246,7 +446,6 @@ export default function SettingsPage() {
                 <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
               </div>
 
-              {/* Status/Error alert if credits esgotados or other issues */}
               {waStatus?.error && (
                 <div className={`flex items-start gap-3 p-4 rounded-xl border ${waStatus.error.includes('131042') ? 'bg-red-500/8 border-red-500/30' : 'bg-yellow-500/8 border-yellow-500/30'}`}>
                   <AlertCircle className={`h-5 w-5 flex-shrink-0 mt-0.5 ${waStatus.error.includes('131042') ? 'text-red-400' : 'text-yellow-400'}`} />
@@ -255,14 +454,14 @@ export default function SettingsPage() {
                       {waStatus.error.includes('131042') ? 'Créditos da Meta esgotados' : 'Atenção na conexão'}
                     </p>
                     <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">
-                      {waStatus.error.includes('131042') 
-                        ? 'A Meta não conseguiu cobrar seu cartão cadastrado. O atendimento oficial foi pausado e está operando via fallback (se configurado).' 
+                      {waStatus.error.includes('131042')
+                        ? 'A Meta não conseguiu cobrar seu cartão cadastrado. O atendimento oficial foi pausado e está operando via fallback (se configurado).'
                         : waStatus.error}
                     </p>
                     {waStatus.error.includes('131042') && (
-                      <a 
-                        href="https://business.facebook.com/settings/whatsapp-business-accounts/" 
-                        target="_blank" 
+                      <a
+                        href="https://business.facebook.com/settings/whatsapp-business-accounts/"
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-red-400 hover:text-red-300 transition-colors mt-2"
                       >
@@ -282,7 +481,6 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* Not connected / setup form */}
           {!checkingWa && (!isConnected || showWaSetup) && (
             <div className="space-y-5">
               {!isConnected && (
@@ -291,7 +489,6 @@ export default function SettingsPage() {
                 </p>
               )}
 
-              {/* Webhook info */}
               <div className="rounded-xl border border-gray-700 bg-gray-800/40 p-4 space-y-3">
                 <div className="flex items-center gap-2">
                   <KeyRound className="h-4 w-4 text-green-400" />
@@ -305,9 +502,6 @@ export default function SettingsPage() {
                     <ExternalLink className="h-3 w-3" /> Abrir Painel da Meta
                   </a>
                 </div>
-                <p className="text-xs text-gray-500">
-                  Navegue em: <strong className="text-gray-300">Selecione o App → Casos de Utilização → WhatsApp (botão "Customize") → Configurações → Webhooks</strong>. Use estes valores:
-                </p>
                 <div className="space-y-2">
                   <div className="rounded-lg bg-gray-900 border border-gray-700 px-3 py-2">
                     <p className="text-[10px] text-gray-500 mb-1">URL do webhook</p>
@@ -324,51 +518,41 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-start gap-2 bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-3">
-                  <AlertCircle className="h-3.5 w-3.5 text-yellow-500 flex-shrink-0 mt-0.5" />
-                  <p className="text-[11px] text-gray-400 leading-relaxed">
-                    Certifique-se de que o botão ao lado do campo <strong className="text-gray-200">messages</strong> na tabela de campos de objeto esteja como <strong className="text-green-500">Unsubscribe</strong> para ativar o serviço. O status precisa estar como <strong className="text-green-500">Subscribed</strong>.
-                  </p>
-                </div>
               </div>
 
-              {/* Credentials */}
               <div className="space-y-3">
                 <div>
                   <label className="text-sm text-gray-300 block mb-1.5">Meta App ID (opcional)</label>
                   <input
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 font-mono placeholder-gray-600 focus:border-green-500 focus:ring-1 focus:ring-green-500/30 outline-none"
+                    className="input"
                     placeholder="1456857732642595"
                     value={appId}
                     onChange={e => { setAppId(e.target.value.trim()); setWaError('') }}
                   />
-                  <p className="text-xs text-gray-500 mt-1">O ID do seu App no Meta Developers (usado para gerar links diretos).</p>
                 </div>
                 <div>
                   <label className="text-sm text-gray-300 block mb-1.5">Phone Number ID</label>
                   <input
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 font-mono placeholder-gray-600 focus:border-green-500 focus:ring-1 focus:ring-green-500/30 outline-none"
+                    className="input"
                     placeholder="1234567890123456"
                     value={phoneNumberId}
                     onChange={e => { setPhoneNumberId(e.target.value.trim()); setWaError('') }}
                   />
-                  <p className="text-xs text-gray-500 mt-1">Em Meta Developers → WhatsApp → Configuração da API → ID do número de telefone</p>
                 </div>
                 <div>
                   <label className="text-sm text-gray-300 block mb-1.5">Access Token</label>
                   <input
                     type="password"
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 font-mono placeholder-gray-600 focus:border-green-500 focus:ring-1 focus:ring-green-500/30 outline-none"
+                    className="input"
                     placeholder="EAAxxxxxxxxxxxxxxx"
                     value={accessToken}
                     onChange={e => { setAccessToken(e.target.value.trim()); setWaError('') }}
                   />
-                  <p className="text-xs text-gray-500 mt-1">Token permanente gerado em Configurações do Sistema do app Meta.</p>
                 </div>
 
                 {waError && (
                   <div className="flex items-start gap-2 text-xs text-red-400 bg-red-500/8 border border-red-500/25 rounded-lg px-3 py-2">
-                    <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" /> 
+                    <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
                     {waError.includes('131042') ? 'Créditos da Meta esgotados. Verifique seu cartão na Meta Business.' : waError}
                   </div>
                 )}

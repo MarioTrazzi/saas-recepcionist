@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Body, UseGuards, Request } from '@nestjs/common'
+import { Controller, Get, Put, Post, Body, UseGuards, Request } from '@nestjs/common'
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger'
 import { AgentService } from './agent.service'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
@@ -18,5 +18,10 @@ export class AgentController {
   @Put('config')
   upsertConfig(@Request() req, @Body() body: any) {
     return this.svc.upsertConfig(req.user.tenantId, body)
+  }
+
+  @Post('tips')
+  generateTips(@Request() req, @Body() body: { systemPrompt: string; agentName: string }) {
+    return this.svc.generateTips(body.systemPrompt || '', body.agentName || '').then(tips => ({ tips }))
   }
 }

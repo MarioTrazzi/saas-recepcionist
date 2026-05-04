@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CheckCircle, ChevronRight, ChevronLeft, Phone } from 'lucide-react'
 import { StepTemplate } from './steps/StepTemplate'
@@ -8,7 +8,7 @@ import { StepChannels } from './steps/StepChannels'
 import { StepHandoff } from './steps/StepHandoff'
 import { StepActivate } from './steps/StepActivate'
 import { SupportChat } from '@/components/wizard/SupportChat'
-import { agentApi, phoneApi, calendarApi, whatsappApi } from '@/lib/api'
+import { agentApi, phoneApi, calendarApi, whatsappApi, knowledgeApi } from '@/lib/api'
 
 const STEPS = [
   { id: 1, title: 'Template', desc: 'Escolha o tipo de negócio' },
@@ -48,6 +48,15 @@ export interface WizardData {
   googleCalendarConnected: boolean
 }
 
+const DRAFT_KEY = 'wizard_draft'
+
+function loadDraft(): { step: number; data: WizardData } | null {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch { return null }
+}
+
 const EMPTY: WizardData = {
   templateId: '',
   templateCategory: 'custom',
@@ -78,11 +87,18 @@ const EMPTY: WizardData = {
 }
 
 export default function WizardPage() {
-  const [step, setStep] = useState(1)
-  const [data, setData] = useState<WizardData>(EMPTY)
+  const [step, setStep] = useState(() => loadDraft()?.step ?? 1)
+  const [data, setData] = useState<WizardData>(() => {
+    const saved = loadDraft()?.data
+    return saved ? { ...EMPTY, ...saved } : EMPTY
+  })
   const [saving, setSaving] = useState(false)
   const [chatOpen, setChatOpen] = useState(false)
   const navigate = useNavigate()
+
+  useEffect(() => {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({ step, data }))
+  }, [step, data])
 
   const update = (partial: Partial<WizardData>) => setData(d => ({ ...d, ...partial }))
 
@@ -102,8 +118,13 @@ export default function WizardPage() {
         handoffPhone: data.handoffPhone,
         handoffWhatsapp: data.handoffWhatsapp,
         calendarMode: data.calendarMode,
+        templateCategory: data.templateCategory || 'custom',
         isActive: true,
       })
+
+      if (data.knowledgeItems.length > 0) {
+        await Promise.allSettled(data.knowledgeItems.map(item => knowledgeApi.create(item)))
+      }
 
       if (data.calendarMode === 'builtin') {
         await calendarApi.setupBuiltin(data.calendarSlotMinutes)
@@ -126,6 +147,7 @@ export default function WizardPage() {
         }
       }
 
+      localStorage.removeItem(DRAFT_KEY)
       navigate('/app/dashboard')
     } finally {
       setSaving(false)

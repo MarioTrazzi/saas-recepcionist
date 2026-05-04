@@ -63,6 +63,9 @@ export class AgentConfig {
   @Column({ nullable: true })
   googleCalendarRefreshToken: string
 
+  @Column({ nullable: true })
+  templateCategory: string
+
   @Column({ type: 'boolean', default: true })
   isActive: boolean
 
