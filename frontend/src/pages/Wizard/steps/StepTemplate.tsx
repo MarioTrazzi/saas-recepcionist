@@ -69,9 +69,10 @@ const TEMPLATE_DETAILS: Record<string, { features: string[]; example: string; ho
       'Verifica convênios e planos de saúde',
       'Envia lembretes de consulta',
       'Cancela ou reagenda horários',
+      'Coleta WhatsApp do paciente para follow-up e lembretes automáticos',
     ],
-    example: 'Paciente: "Quero marcar com o cardiologista"\nSofia: "Temos cardiologia disponível terça às 14h ou quarta às 10h. Qual prefere?"',
-    howItWorks: 'A Sofia entende pedidos de agendamento, verifica a disponibilidade na sua agenda e confirma automaticamente. Se o paciente perguntar sobre especialidades ou convênios, ela responde com base nas informações cadastradas.',
+    example: 'Paciente: "Quero marcar com o cardiologista"\nSofia: "Temos terça às 14h ou quarta às 10h. Qual prefere?"\nPaciente: "Terça às 14h"\nSofia: "Confirmado! Para te enviar o lembrete, qual é o seu WhatsApp?"',
+    howItWorks: 'A Sofia entende pedidos de agendamento, verifica a disponibilidade na sua agenda e confirma automaticamente. Ao confirmar a consulta, coleta o WhatsApp do paciente para lembretes — transformando cada atendimento em um lead registrado para sua clínica.',
   },
   restaurant: {
     features: [
@@ -80,9 +81,10 @@ const TEMPLATE_DETAILS: Record<string, { features: string[]; example: string; ho
       'Informa horários de funcionamento',
       'Faz reservas de mesa',
       'Indica pratos do dia e promoções',
+      'Captura nome e contato de novos clientes para campanhas de fidelização',
     ],
-    example: 'Cliente: "Quero uma pizza margherita e uma coca"\nBia: "Pizza margherita R$39,90 + Coca 2L R$12,90 = R$52,80. Delivery ou retirada?"',
-    howItWorks: 'A Bia conhece todo o seu cardápio e preços. Ela monta o pedido, calcula o total e pergunta se é delivery ou retirada. Para reservas, ela verifica disponibilidade e confirma na hora.',
+    example: 'Cliente: "Quero uma pizza margherita e uma coca"\nBia: "R$52,80. Delivery ou retirada?"\n[Após fechar pedido]\nBia: "Posso te incluir na nossa lista de promoções? Qual é o seu nome?"',
+    howItWorks: 'A Bia monta o pedido, calcula o total e fecha o pagamento. Ao final, convida o cliente a entrar na lista de promoções — cadastrando nome e contato para campanhas de fidelização e reativação futuras.',
   },
   retail: {
     features: [
@@ -91,9 +93,10 @@ const TEMPLATE_DETAILS: Record<string, { features: string[]; example: string; ho
       'Informa formas de pagamento e parcelamento',
       'Esclarece prazos de entrega e cobertura de frete',
       'Explica política de trocas e devoluções',
+      'Registra clientes interessados para aviso quando produto chegar em estoque',
     ],
-    example: 'Cliente: "Vocês têm tênis Nike Air Max?"\nFelipe: "Temos! Tamanhos 39 a 44, R$599,90. Quer que reserve para você?"',
-    howItWorks: 'O Felipe conhece seu catálogo de produtos e preços. Ele responde sobre disponibilidade, ajuda o cliente a escolher o item certo e pode registrar encomendas. Se não souber algo, transfere para um atendente humano.',
+    example: 'Cliente: "Vocês têm tênis Nike Air Max 42?"\nFelipe: "No 42 estamos sem estoque. Posso te avisar assim que chegar? Qual é o seu WhatsApp?"',
+    howItWorks: 'O Felipe conhece seu catálogo e preços. Responde sobre disponibilidade e ajuda o cliente a escolher. Quando um produto está em falta, registra o contato do cliente para notificação — convertendo interesse em lead qualificado.',
   },
   services: {
     features: [
@@ -102,9 +105,10 @@ const TEMPLATE_DETAILS: Record<string, { features: string[]; example: string; ho
       'Coleta endereço completo e melhor horário',
       'Informa garantia e formas de pagamento',
       'Envia orçamento estimado por WhatsApp',
+      'Coleta nome e WhatsApp para follow-up de orçamentos não fechados',
     ],
-    example: 'Cliente: "Meu chuveiro está vazando"\nCarlos: "Vazamento de chuveiro fica entre R$80 e R$150. Tenho amanhã às 9h ou 14h. Qual horário?"',
-    howItWorks: 'O Carlos entende o tipo de serviço, estima uma faixa de preço com base no problema descrito e agenda a visita técnica. Para orçamentos detalhados, coleta endereço, fotos e melhor horário para o técnico.',
+    example: 'Cliente: "Meu chuveiro está vazando"\nCarlos: "Entre R$80 e R$150. Temos amanhã às 9h ou 14h."\nCliente: "9h"\nCarlos: "Para confirmar e enviar os dados do técnico, qual é o seu nome e WhatsApp?"',
+    howItWorks: 'O Carlos entende o serviço, estima preço e agenda a visita. Ao confirmar, coleta nome e WhatsApp do cliente — garantindo que nenhum orçamento fique sem follow-up e que cada contato vire um lead salvo.',
   },
   salon: {
     features: [
@@ -113,20 +117,22 @@ const TEMPLATE_DETAILS: Record<string, { features: string[]; example: string; ho
       'Indica profissional disponível para cada serviço',
       'Confirma horário, valor total e instruções de preparo',
       'Lembra a cliente do horário no dia anterior',
+      'Constrói lista VIP de clientes para reativação e promoções sazonais',
     ],
-    example: 'Cliente: "Quero corte e manicure"\nLara: "Corte R$80 + Manicure R$35 = R$115. Amanhã às 10h ou 14h?"',
-    howItWorks: 'A Lara conhece a tabela de serviços, preços e duração de cada um. Ela sugere combos, indica o profissional certo e fecha o agendamento com confirmação completa. Acolhedora e próxima, no tom certo de salão.',
+    example: 'Cliente: "Quero corte e manicure"\nLara: "R$115. Amanhã às 10h ou 14h?"\nCliente: "14h com a Patrícia"\nLara: "Confirmado! Posso te incluir na lista VIP para receber promoções e avisos de horários?"',
+    howItWorks: 'A Lara fecha o agendamento com confirmação completa. Ao final, convida o cliente para a lista VIP do salão — construindo uma base de clientes para campanhas de reativação e promoções sazonais.',
   },
   real_estate: {
     features: [
+      'Qualifica leads por orçamento, região e tipo antes de conectar com corretor',
       'Apresenta imóveis disponíveis com detalhes',
       'Filtra por região, preço e tipo',
       'Agenda visitas presenciais',
       'Informa documentação necessária',
       'Tira dúvidas sobre financiamento',
     ],
-    example: 'Cliente: "Procuro apartamento de 2 quartos em São Paulo"\nAssistente: "Tenho 3 opções entre R$350k e R$500k. Quer agendar uma visita?"',
-    howItWorks: 'O assistente conhece seu portfólio de imóveis e ajuda o cliente a encontrar o que procura. Ele filtra por região, preço e tipo, e agenda visitas quando o cliente demonstra interesse.',
+    example: 'Cliente: "Procuro apê de 2 quartos em SP, até R$400k"\nAna: "Tenho 3 opções. Quer detalhes da Vila Mariana?"\nCliente: "Sim!"\nAna: "Para agendar visita e enviar o endereço, me passa seu nome e WhatsApp?"',
+    howItWorks: 'A Ana filtra imóveis por perfil do comprador antes de qualquer coisa — qualificando o lead automaticamente. Só depois de entender orçamento, região e urgência ela apresenta opções e captura o contato para o corretor agir com contexto.',
   },
   education: {
     features: [
@@ -134,10 +140,11 @@ const TEMPLATE_DETAILS: Record<string, { features: string[]; example: string; ho
       'Tira dúvidas sobre matrícula e documentos',
       'Informa valores e formas de pagamento',
       'Agenda visitas ou aulas experimentais',
-      'Envia material informativo',
+      'Captura nome e email antes de enviar material — alimentando o funil de matrículas',
+      'Envia material informativo automaticamente',
     ],
-    example: 'Cliente: "Quero saber sobre o curso de Inglês"\nAssistente: "Temos Inglês para adultos, R$450/mês. Aulas 2x por semana. Quer agendar uma aula experimental?"',
-    howItWorks: 'O assistente conhece todos os cursos, valores e processos de matrícula. Ele responde dúvidas, envia informações detalhadas e agenda aulas experimentais para novos alunos.',
+    example: 'Cliente: "Quero saber sobre o curso de Inglês"\nEdu: "R$450/mês, 2x por semana. Quer uma aula experimental?"\nCliente: "Quero!"\nEdu: "Para garantir sua vaga e enviar o material, qual é o seu nome e email?"',
+    howItWorks: 'O Edu responde dúvidas sobre cursos e matrícula. Antes de enviar qualquer material, coleta nome e contato do interessado — alimentando o funil de matrículas com leads qualificados prontos para o time pedagógico abordar.',
   },
 }
 

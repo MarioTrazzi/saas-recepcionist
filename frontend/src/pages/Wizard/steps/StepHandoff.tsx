@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { ChevronRight, ChevronLeft, UserCheck, Calendar, CheckCircle, Loader2, ExternalLink, Clock, Info } from 'lucide-react'
+import { ChevronRight, ChevronLeft, UserCheck, Calendar, CheckCircle, Loader2, ExternalLink, Clock, Info, Flame } from 'lucide-react'
 import { WizardData } from '../index'
 import { calendarApi } from '@/lib/api'
 import { getTemplateContext } from '@/lib/template-context'
@@ -34,6 +34,7 @@ export function StepHandoff({ data, update, onNext, onBack }: Props) {
   const ctx = getTemplateContext(data.templateCategory)
   const [googleState, setGoogleState] = useState<GoogleState>('idle')
   const [googleError, setGoogleError] = useState('')
+  const [leadAlertPhone, setLeadAlertPhone] = useState('')
 
   // Working hours state: Mon–Fri active by default
   const [workingHours, setWorkingHours] = useState([
@@ -163,6 +164,40 @@ export function StepHandoff({ data, update, onNext, onBack }: Props) {
             </div>
           </div>
         )}
+
+        {/* Lead alert section */}
+        <div className="border-t border-gray-800 pt-6">
+          <div className="flex items-center gap-2 mb-1">
+            <Flame className="h-4 w-4 text-orange-400" />
+            <h3 className="text-sm font-semibold text-white">Alertas de leads quentes</h3>
+          </div>
+          <p className="text-xs text-gray-500 mb-4">
+            Quando o agente detectar um lead com alta intenção de compra, você recebe uma notificação imediata no WhatsApp — com nome, contato e o que o cliente quer.
+          </p>
+          <div>
+            <label className="text-sm text-gray-300 block mb-1.5">WhatsApp para receber alertas de leads</label>
+            <div className="flex items-center border border-gray-700 rounded-lg overflow-hidden bg-gray-800 focus-within:border-orange-500 focus-within:ring-1 focus-within:ring-orange-500/30 transition-colors">
+              <span className="px-3 py-2 text-sm text-gray-400 bg-gray-700/60 border-r border-gray-700 select-none">+55</span>
+              <input
+                className="flex-1 bg-transparent px-3 py-2 text-sm text-gray-100 placeholder-gray-500 outline-none"
+                value={leadAlertPhone}
+                onChange={e => setLeadAlertPhone(e.target.value.replace(/\D/g, ''))}
+                placeholder="11 99999-9999"
+                maxLength={11}
+              />
+            </div>
+            <div className="mt-3 bg-orange-500/5 border border-orange-500/20 rounded-lg px-4 py-3">
+              <p className="text-[10px] uppercase tracking-wider text-orange-400/70 font-semibold mb-1">Exemplo de notificação</p>
+              <p className="text-xs text-gray-300 leading-relaxed">
+                🔥 <strong>Lead quente detectado</strong><br />
+                Fernanda quer comprar apartamento de R$400k em Vila Mariana.<br />
+                📞 (11) 99876-5432 · via WhatsApp · agora<br />
+                <span className="text-orange-400">→ Ver conversa completa no painel</span>
+              </p>
+            </div>
+            <p className="text-xs text-gray-600 mt-2">Deixe em branco para não receber alertas. Você pode configurar depois no painel.</p>
+          </div>
+        </div>
 
         {/* Calendar section */}
         <div className="border-t border-gray-800 pt-6">

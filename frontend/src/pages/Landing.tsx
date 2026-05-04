@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import {
   Phone, MessageSquare, CheckCircle2, ArrowRight,
   Globe, BarChart3, Calendar, Users, Brain, Plus, Zap,
-  FileText, Upload, MousePointerClick, Wifi,
+  FileText, Upload, MousePointerClick, Wifi, UserPlus,
 } from 'lucide-react'
 import './Landing.css'
 
@@ -224,7 +224,7 @@ function VisualActivate() {
       {[
         { label: 'Chamadas hoje', value: '23', color: 'var(--primary-2)' },
         { label: 'WhatsApp', value: '47', color: 'var(--accent)' },
-        { label: 'Agendamentos', value: '12', color: '#ffc83d' },
+        { label: 'Leads capturados', value: '18', color: '#ffa040' },
       ].map((s, i) => (
         <div key={i} style={{
           background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.08)',
@@ -234,6 +234,90 @@ function VisualActivate() {
           <span style={{ fontSize: 22, fontWeight: 800, color: s.color, fontVariantNumeric: 'tabular-nums' }}>{s.value}</span>
         </div>
       ))}
+    </div>
+  )
+}
+
+function VisualLeads() {
+  const leads = [
+    { initials: 'FO', name: 'Fernanda Oliveira', channel: 'WhatsApp', intent: 'Apartamento 2q · até R$400k', time: '08:42', tag: 'quente' },
+    { initials: 'RS', name: 'Ricardo Santos', channel: 'Telefone', intent: 'Reforma hidráulica urgente', time: '09:15', tag: 'novo' },
+    { initials: 'AM', name: 'Ana Paula M.', channel: 'WhatsApp', intent: 'Matrícula curso de inglês', time: '10:03', tag: 'novo' },
+    { initials: 'CH', name: 'Carlos H.', channel: 'Telefone', intent: 'Consulta cardiologista', time: '10:38', tag: 'convertido' },
+  ]
+  const tagMap: Record<string, { bg: string; color: string; label: string }> = {
+    novo:       { bg: 'rgba(108,60,225,.15)', color: 'var(--primary-2)', label: 'Novo' },
+    quente:     { bg: 'rgba(255,140,0,.15)',  color: '#ffa040',          label: '🔥 Quente' },
+    convertido: { bg: 'rgba(0,212,170,.15)',  color: 'var(--accent)',    label: 'Convertido' },
+  }
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {/* Hot lead alert */}
+      <div style={{
+        background: 'rgba(255,140,0,.08)', border: '1px solid rgba(255,140,0,.3)',
+        borderRadius: 12, padding: '12px 16px', display: 'flex', gap: 10, alignItems: 'center',
+      }}>
+        <span style={{ fontSize: 18 }}>🔥</span>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: '#ffa040' }}>Lead quente detectado</div>
+          <div style={{ fontSize: 11, color: 'var(--text-mute)', marginTop: 1 }}>
+            Fernanda quer comprar agora — notificação enviada no seu WhatsApp
+          </div>
+        </div>
+        <span style={{ fontSize: 10, color: 'var(--text-mute)', flexShrink: 0 }}>agora</span>
+      </div>
+
+      {/* List header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 2px' }}>
+        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-dim)' }}>Leads capturados hoje</span>
+        <span style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600 }}>4 novos</span>
+      </div>
+
+      {/* Leads */}
+      {leads.map((lead, i) => {
+        const s = tagMap[lead.tag]
+        return (
+          <div key={i} style={{
+            background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)',
+            borderRadius: 12, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 12,
+          }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: 9, flexShrink: 0,
+              background: 'linear-gradient(135deg,rgba(108,60,225,.3),rgba(0,212,170,.2))',
+              display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 700, color: 'var(--text)',
+            }}>{lead.initials}</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {lead.name}
+              </div>
+              <div style={{ fontSize: 10, color: 'var(--text-mute)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {lead.channel} · {lead.intent}
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
+              <span style={{ fontSize: 9, padding: '2px 7px', borderRadius: 99, fontWeight: 600, background: s.bg, color: s.color }}>{s.label}</span>
+              <span style={{ fontSize: 9, color: 'var(--text-mute)' }}>{lead.time}</span>
+            </div>
+          </div>
+        )
+      })}
+
+      {/* Summary stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginTop: 4 }}>
+        {[
+          { label: 'Capturados', value: '4', color: 'var(--primary-2)' },
+          { label: 'Quentes', value: '1', color: '#ffa040' },
+          { label: 'Convertidos', value: '1', color: 'var(--accent)' },
+        ].map((stat, i) => (
+          <div key={i} style={{
+            background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)',
+            borderRadius: 10, padding: '10px 12px', textAlign: 'center',
+          }}>
+            <div style={{ fontSize: 20, fontWeight: 800, color: stat.color }}>{stat.value}</div>
+            <div style={{ fontSize: 9, color: 'var(--text-mute)', marginTop: 2 }}>{stat.label}</div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -256,7 +340,7 @@ const STEPS = [
         'Prompt e personalidade já configurados',
         'Base de conhecimento de exemplo inclusa',
         'Personalize nome, voz e comportamento',
-        'Troque de template a qualquer momento',
+        'Perguntas de qualificação de leads já configuradas por setor',
         'Ou comece do zero com template em branco',
       ],
       cta: 'Explorar templates',
@@ -317,6 +401,7 @@ const FEATURES = [
   { icon: <Brain />, title: 'IA com contexto', desc: 'Baseado em GPT-4o. Entende contexto, lembra da conversa e dá respostas coerentes e naturais.' },
   { icon: <BarChart3 />, title: 'Dashboard completo', desc: 'Acompanhe volume de chamadas, assuntos mais perguntados, horários de pico e satisfação.' },
   { icon: <Users />, title: 'Transferência humana', desc: 'Detecta quando o cliente precisa de atendimento humano e transfere na hora certa.' },
+  { icon: <UserPlus />, title: 'Captação de leads 24/7', desc: 'Cada atendimento vira um lead registrado. Nome, contato e intenção de compra no dashboard — prontos para seu time fechar.' },
 ]
 
 const USE_CASES = [
@@ -324,78 +409,94 @@ const USE_CASES = [
     emoji: '🏥', label: 'Saúde', name: 'Clínicas & Consultórios',
     agent: 'Sofia',
     quote: 'Bom dia! Clínica São Lucas. Tem consulta disponível amanhã às 10h com o Dr. Alves. Posso confirmar seu agendamento?',
-    howItWorks: 'A Sofia entende pedidos de agendamento, verifica a disponibilidade na agenda e confirma automaticamente. Se o paciente perguntar sobre especialidades ou convênios, ela responde com base nas informações cadastradas.',
-    features: ['Agenda consultas com data e hora', 'Informa especialidades e médicos', 'Verifica convênios e planos de saúde', 'Cancela ou reagenda horários', 'Envia lembretes de consulta'],
+    howItWorks: 'A Sofia entende pedidos de agendamento, verifica a disponibilidade na agenda e confirma automaticamente. Ao confirmar a consulta, coleta o WhatsApp do paciente para envio de lembretes e follow-up — transformando cada atendimento em um lead registrado na clínica.',
+    features: ['Agenda consultas com data e hora', 'Informa especialidades e médicos', 'Verifica convênios e planos de saúde', 'Cancela ou reagenda horários', 'Envia lembretes de consulta', 'Registra pacientes interessados com plano e intenção para follow-up'],
     conversation: [
-      { from: 'patient', text: 'Quais convênios vocês aceitam?' },
-      { from: 'agent', text: 'Trabalhamos com Unimed, Bradesco Saúde, Amil, SulAmérica e NotreDame. Também atendemos particular.' },
       { from: 'patient', text: 'Tenho Unimed. Quero agendar com o cardiologista.' },
-      { from: 'agent', text: 'Perfeito! Pela Unimed, temos o Dr. Alves terça às 14h ou quarta às 10h. Qual horário prefere?' },
+      { from: 'agent', text: 'Temos o Dr. Alves terça às 14h ou quarta às 10h. Qual horário prefere?' },
+      { from: 'patient', text: 'Terça às 14h.' },
+      { from: 'agent', text: 'Agendado! ✅ Para te enviar o lembrete e avisar sobre retornos, qual é o seu WhatsApp?' },
+      { from: 'patient', text: '(11) 91234-5678' },
+      { from: 'agent', text: 'Perfeito, cadastrado! Até terça às 14h com o Dr. Alves. 😊' },
     ],
   },
   {
     emoji: '🍕', label: 'Alimentação', name: 'Restaurantes & Delivery',
     agent: 'Bia',
     quote: 'Olá! Nosso cardápio de hoje inclui frango grelhado, macarrão ao pesto e saladas. Delivery em até 35 minutos. Qual você gostaria?',
-    howItWorks: 'A Bia conhece todo o cardápio e preços. Ela monta o pedido, calcula o total e pergunta se é delivery ou retirada. Para reservas, verifica disponibilidade e confirma na hora.',
-    features: ['Mostra cardápio completo com preços', 'Aceita pedidos para delivery ou retirada', 'Informa horários de funcionamento', 'Faz reservas de mesa', 'Indica pratos do dia e promoções'],
+    howItWorks: 'A Bia conhece todo o cardápio e preços. Monta o pedido, calcula o total e fecha o pagamento. Ao final, convida o cliente a entrar na lista de promoções — cadastrando nome e contato para campanhas de fidelização e reativação.',
+    features: ['Mostra cardápio completo com preços', 'Aceita pedidos para delivery ou retirada', 'Informa horários de funcionamento', 'Faz reservas de mesa', 'Indica pratos do dia e promoções', 'Captura dados de novos clientes para promoções e fidelização'],
     conversation: [
       { from: 'customer', text: 'Quero uma pizza margherita e uma coca-cola' },
       { from: 'agent', text: 'Pizza margherita R$39,90 + Coca 2L R$12,90 = R$52,80. Vai pagar como?' },
       { from: 'customer', text: 'Pix' },
-      { from: 'agent', text: 'Chave Pix: CNPJ 12.345.678/0001-90. É só copiar e colar no seu app. Assim que o pagamento confirmar, seu pedido vai para produção!' },
+      { from: 'agent', text: 'Chave Pix: CNPJ 12.345.678/0001-90. Confirmado, vai pra produção! 🍕' },
+      { from: 'agent', text: 'Posso te incluir na lista de promoções e pratos especiais da semana? É só me passar seu nome.' },
+      { from: 'customer', text: 'Claro! Lucas.' },
+      { from: 'agent', text: 'Feito, Lucas! Você vai receber nossas ofertas em primeira mão. Bom apetite! 😄' },
     ],
   },
   {
     emoji: '🏠', label: 'Imóveis', name: 'Imobiliárias',
     agent: 'Ana',
     quote: 'Encontrei 4 opções de 2 quartos no Bairro Jardins dentro do seu orçamento. Posso agendar uma visita para esse sábado?',
-    howItWorks: 'A Ana conhece o portfólio de imóveis e ajuda o cliente a encontrar o que procura. Filtra por região, preço e tipo, e agenda visitas quando o cliente demonstra interesse.',
-    features: ['Apresenta imóveis disponíveis com detalhes', 'Filtra por região, preço e tipo', 'Agenda visitas presenciais', 'Informa documentação necessária', 'Tira dúvidas sobre financiamento'],
+    howItWorks: 'A Ana filtra imóveis por orçamento, região e tipo antes de qualquer coisa — qualificando o lead automaticamente. Só depois de entender o perfil do comprador ela apresenta opções e captura o contato para o corretor agir com contexto.',
+    features: ['Apresenta imóveis disponíveis com detalhes', 'Filtra por região, preço e tipo', 'Agenda visitas presenciais', 'Informa documentação necessária', 'Tira dúvidas sobre financiamento', 'Qualifica leads por orçamento, região e tipo de imóvel'],
     conversation: [
-      { from: 'client', text: 'Procuro apartamento de 2 quartos em São Paulo, até 400 mil' },
-      { from: 'agent', text: 'Tenho 3 opções: Pinheiros (R$380k), Vila Mariana (R$395k) e Moema (R$400k). Quer detalhes de algum?' },
+      { from: 'client', text: 'Procuro apartamento de 2 quartos em SP, até R$400k' },
+      { from: 'agent', text: 'Encontrei 3 opções: Pinheiros (R$380k), Vila Mariana (R$395k) e Moema (R$400k). Qual te interessa?' },
       { from: 'client', text: 'Vila Mariana' },
-      { from: 'agent', text: 'Apartamento de 65m², 2 quartos, 1 vaga, varanda. Próximo ao metrô. Posso agendar uma visita para sábado?' },
+      { from: 'agent', text: '65m², 2 quartos, 1 vaga, varanda. Próximo ao metrô. Posso agendar visita para sábado?' },
+      { from: 'client', text: 'Sim!' },
+      { from: 'agent', text: 'Para confirmar a visita e enviar o endereço, qual o seu nome e WhatsApp?' },
+      { from: 'client', text: 'Fernanda, (11) 99876-5432' },
+      { from: 'agent', text: 'Perfeito, Fernanda! Visita confirmada sábado. Nosso corretor vai entrar em contato para combinar o horário. 🏠' },
     ],
   },
   {
     emoji: '💆', label: 'Estética', name: 'Salões & Clínicas de Estética',
     agent: 'Lara',
     quote: 'Oi! Temos horário disponível amanhã para corte e escova às 10h e às 15h. Quer agendar?',
-    howItWorks: 'A Lara agenda serviços de beleza, informa preços e duração de cada procedimento, e sugere horários disponíveis. Também pode indicar profissionais e combinar serviços.',
-    features: ['Agenda serviços de beleza', 'Informa preços e duração', 'Sugere profissionais disponíveis', 'Combina múltiplos serviços', 'Envia confirmação e lembrete'],
+    howItWorks: 'A Lara agenda serviços, informa preços e sugere horários. Ao confirmar o atendimento, convida o cliente a entrar na lista VIP do salão — construindo uma base de clientes para campanhas de reativação e promoções sazonais.',
+    features: ['Agenda serviços de beleza', 'Informa preços e duração', 'Sugere profissionais disponíveis', 'Combina múltiplos serviços', 'Envia confirmação e lembrete', 'Constrói lista de clientes para reativação e promoções'],
     conversation: [
       { from: 'client', text: 'Quero fazer corte e manicure' },
-      { from: 'agent', text: 'Corte R$60 + Manicure R$35 = R$95. Temos horário amanhã às 10h ou 14h. Qual prefere?' },
+      { from: 'agent', text: 'Corte R$60 + Manicure R$35 = R$95. Temos amanhã às 10h ou 14h. Qual prefere?' },
       { from: 'client', text: '14h com a Patrícia' },
-      { from: 'agent', text: 'Confirmado! Corte e manicure amanhã às 14h com a Patrícia. Até lá!' },
+      { from: 'agent', text: 'Confirmado! Corte e manicure amanhã às 14h. ✅' },
+      { from: 'agent', text: 'Posso te incluir na nossa lista VIP? Você recebe promoções e aviso quando abrem horários com a Patrícia.' },
+      { from: 'client', text: 'Quero sim!' },
+      { from: 'agent', text: 'Ótimo! Cadastrada. Até amanhã! 💅' },
     ],
   },
   {
     emoji: '🎓', label: 'Educação', name: 'Escolas & Cursos',
     agent: 'Edu',
     quote: 'Temos Inglês para adultos, R$450/mês, aulas 2x por semana. Quer agendar uma aula experimental gratuita?',
-    howItWorks: 'O Edu conhece todos os cursos, valores e processos de matrícula. Responde dúvidas, envia informações detalhadas e agenda aulas experimentais para novos alunos.',
-    features: ['Informa cursos e grade curricular', 'Tira dúvidas sobre matrícula', 'Informa valores e formas de pagamento', 'Agenda aulas experimentais', 'Envia material informativo'],
+    howItWorks: 'O Edu responde dúvidas sobre cursos e matrícula. Antes de enviar qualquer material, coleta nome e email do interessado — alimentando o funil de matrículas com leads qualificados prontos para o time pedagógico abordar.',
+    features: ['Informa cursos e grade curricular', 'Tira dúvidas sobre matrícula', 'Informa valores e formas de pagamento', 'Agenda aulas experimentais', 'Envia material informativo', 'Captura interessados e envia material de captação automaticamente'],
     conversation: [
       { from: 'student', text: 'Quero saber sobre o curso de Inglês' },
-      { from: 'agent', text: 'Inglês para adultos R$450/mês, 2x por semana. Quer acessar uma aula experimental gratuita?' },
-      { from: 'student', text: 'Sim, como acesso?' },
-      { from: 'agent', text: 'Enviei o link da sala virtual no seu WhatsApp. Acesso: aluno.ingles@educursos.com / Senha: edu2024. A aula começa terça às 19h!' },
+      { from: 'agent', text: 'Inglês para adultos, R$450/mês, 2x por semana. Temos aula experimental gratuita. Quer participar?' },
+      { from: 'student', text: 'Quero!' },
+      { from: 'agent', text: 'Para garantir sua vaga e enviar o material, qual é o seu nome e email?' },
+      { from: 'student', text: 'Ana, ana@email.com' },
+      { from: 'agent', text: 'Perfeito, Ana! Material enviado no seu email. A aula experimental é terça às 19h — te esperamos! 🎓' },
     ],
   },
   {
     emoji: '🔧', label: 'Serviços', name: 'Serviços Técnicos & Manutenção',
     agent: 'Carlos',
     quote: 'Temos disponibilidade amanhã às 9h ou 14h para o reparo. Qual horário fica melhor para você?',
-    howItWorks: 'O Carlos entende o tipo de serviço solicitado, verifica disponibilidade na agenda e agenda automaticamente. Para orçamentos, coleta as informações necessárias e envia uma estimativa.',
-    features: ['Agenda serviços e visitas técnicas', 'Informa preços e prazos', 'Tira dúvidas sobre tipos de serviço', 'Envia orçamentos estimados', 'Confirma agendamentos por WhatsApp'],
+    howItWorks: 'O Carlos entende o serviço, informa o preço estimado e agenda o técnico. Ao confirmar, coleta nome e WhatsApp do cliente — garantindo que nenhum orçamento fique sem follow-up e que o histórico do lead esteja salvo para contatos futuros.',
+    features: ['Agenda serviços e visitas técnicas', 'Informa preços e prazos', 'Tira dúvidas sobre tipos de serviço', 'Envia orçamentos estimados', 'Confirma agendamentos por WhatsApp', 'Coleta dados do lead e agenda follow-up automático para orçamentos'],
     conversation: [
       { from: 'customer', text: 'Preciso de um encanador, meu chuveiro está vazando' },
-      { from: 'agent', text: 'Entendi! Para vazamento de chuceiro, o reparo custa entre R$80 e R$150. Temos amanhã às 9h ou 14h disponível.' },
-      { from: 'customer', text: '9h, por favor' },
-      { from: 'agent', text: 'Agendado! Técnico amanhã às 9h. Ele levará as ferramentas necessárias. Posso ajudar com mais alguma coisa?' },
+      { from: 'agent', text: 'Entendi! Reparo de chuveiro sai entre R$80 e R$150. Temos amanhã às 9h ou 14h. Qual prefere?' },
+      { from: 'customer', text: '9h' },
+      { from: 'agent', text: 'Para confirmar e enviar os dados do técnico, qual é o seu nome e WhatsApp?' },
+      { from: 'customer', text: 'Roberto, (11) 98888-1234' },
+      { from: 'agent', text: 'Confirmado, Roberto! Técnico amanhã às 9h. Você receberá uma mensagem de confirmação em breve. 🔧' },
     ],
   },
 ]
@@ -418,15 +519,15 @@ const TESTIMONIALS = [
 const PLANS = [
   {
     name: 'Starter', price: 97, tag: '100 minutos de voz/mês', featured: false,
-    features: ['100 min de chamada/mês', 'WhatsApp ilimitado', '1 número de telefone', 'Base de conhecimento', 'Suporte por email'],
+    features: ['100 min de chamada/mês', 'WhatsApp ilimitado', '1 número de telefone', 'Base de conhecimento', 'Painel de leads básico', 'Suporte por email'],
   },
   {
     name: 'Pro', price: 297, tag: '500 minutos de voz/mês', featured: true,
-    features: ['500 min de chamada/mês', 'WhatsApp ilimitado', '1 número de telefone', 'Integração Google Agenda', 'Transferência para humano', 'Suporte prioritário'],
+    features: ['500 min de chamada/mês', 'WhatsApp ilimitado', '1 número de telefone', 'Integração Google Agenda', 'Painel de leads + alertas WhatsApp', 'Follow-up automático de leads', 'Transferência para humano', 'Suporte prioritário'],
   },
   {
     name: 'Enterprise', price: 797, tag: '2.000 minutos de voz/mês', featured: false,
-    features: ['2.000 min/mês', 'Múltiplos números', 'Multi-canal', 'API de integração', 'Relatórios avançados', 'Suporte dedicado'],
+    features: ['2.000 min/mês', 'Múltiplos números', 'Multi-canal', 'CRM de leads completo + exportação', 'Integração com CRMs externos', 'API de integração', 'Relatórios avançados de conversão', 'Suporte dedicado'],
   },
 ]
 
@@ -437,6 +538,7 @@ const FAQS = [
   { q: 'Funciona com qualquer número de telefone?', a: 'Fornecemos um número brasileiro (DDD à sua escolha) incluso em todos os planos. Portabilidade de número próprio disponível no Enterprise.' },
   { q: 'Meus dados ficam seguros?', a: 'Sim. Toda conversa é criptografada, armazenada em servidores no Brasil e você pode exportar ou deletar a qualquer momento.' },
   { q: 'Posso testar antes de contratar?', a: 'Sim! 14 dias grátis, sem cartão de crédito. Configure, teste com clientes reais e só assine se gostar.' },
+  { q: 'O agente realmente captura e organiza os leads?', a: 'Sim. Cada atendimento gera um lead com nome, contato e intenção de compra registrados. Leads com alta intenção disparam uma notificação imediata no seu WhatsApp. Leads não convertidos recebem um follow-up automático no dia seguinte. Tudo visível no painel com histórico completo da conversa.' },
 ]
 
 function formatTimer(s: number) {
@@ -456,6 +558,7 @@ export default function LandingPage() {
   const featuresRef = useRef<HTMLDivElement>(null)
   const faqBodyRefs = useRef<(HTMLDivElement | null)[]>([])
   const faqRevealedRef = useRef<Set<number>>(new Set())
+  const stepRevealedRef = useRef<Set<number>>(new Set())
   const stepDetailRef = useRef<HTMLDivElement>(null)
   const templateDetailRef = useRef<HTMLDivElement>(null)
 
@@ -473,8 +576,10 @@ export default function LandingPage() {
       entries => entries.forEach(e => {
         if (e.isIntersecting) {
           e.target.classList.add('in')
-          const idx = (e.target as HTMLElement).dataset.faqIdx
-          if (idx !== undefined) faqRevealedRef.current.add(Number(idx))
+          const faqIdx = (e.target as HTMLElement).dataset.faqIdx
+          if (faqIdx !== undefined) faqRevealedRef.current.add(Number(faqIdx))
+          const stepIdx = (e.target as HTMLElement).dataset.stepIdx
+          if (stepIdx !== undefined) stepRevealedRef.current.add(Number(stepIdx))
           obs.unobserve(e.target)
         }
       }),
@@ -492,6 +597,15 @@ export default function LandingPage() {
       }
     })
   }, [openFaq])
+
+  useLayoutEffect(() => {
+    stepRevealedRef.current.forEach(idx => {
+      const el = document.querySelector(`.step[data-step-idx="${idx}"]`)
+      if (el && !el.classList.contains('in')) {
+        el.classList.add('in')
+      }
+    })
+  }, [activeStep])
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -558,6 +672,7 @@ export default function LandingPage() {
           </a>
           <div className="nav-links">
             <a href="#como-funciona">Como funciona</a>
+            <a href="#leads">Leads</a>
             <a href="#casos">Casos de uso</a>
             <a href="#precos">Preços</a>
             <a href="#faq">FAQ</a>
@@ -637,7 +752,7 @@ export default function LandingPage() {
                 </div>
                 <div className="cc-foot">
                   <span className="stat">Sentimento <strong style={{ color: 'var(--accent)', marginLeft: 4 }}>Positivo</strong></span>
-                  <span className="stat">Canal <strong style={{ marginLeft: 4 }}>Telefone</strong></span>
+                  <span className="stat">Lead <strong style={{ color: 'var(--accent)', marginLeft: 4 }}>Capturado</strong></span>
                 </div>
               </div>
               <div className="floater f2">
@@ -655,47 +770,62 @@ export default function LandingPage() {
           <div className="section-head reveal">
             <span className="eyebrow">Como funciona</span>
             <h2 style={{ marginTop: 18 }}>Do zero ao agente ativo<br />em menos de 10 minutos</h2>
-            <p>Clique em cada passo para ver como funciona na prática.</p>
+            <p><strong style={{ color: 'var(--accent)' }}>Clique</strong> em cada passo para ver como funciona na prática.</p>
           </div>
 
           {/* Step cards — clickable */}
           <div className="steps">
-            {STEPS.map((s, i) => (
-              <button
-                key={i}
-                className={`step reveal ${i === 0 && activeStep === null ? 'step-click-hint' : ''}`}
-                data-delay={String(i + 1) as any}
-                onClick={() => handleStepClick(i)}
-                style={{
-                  textAlign: 'left', cursor: 'pointer', width: '100%',
-                  borderColor: activeStep === i ? 'rgba(108,60,225,.6)' : undefined,
-                  background: activeStep === i
-                    ? 'linear-gradient(180deg,rgba(108,60,225,.12),rgba(108,60,225,.04))'
-                    : undefined,
-                  boxShadow: activeStep === i ? '0 0 0 1px rgba(108,60,225,.4)' : undefined,
-                  outline: 'none',
-                }}
-              >
-                <span className="step-num">{s.num}</span>
-                <div className="step-icon">{s.icon}</div>
-                <h3>{s.title}</h3>
-                <p>{s.desc}</p>
-                <div style={{
-                  marginTop: 18, display: 'flex', alignItems: 'center', gap: 6,
-                  fontSize: 13, fontWeight: 500,
-                  color: activeStep === i ? 'var(--accent)' : 'var(--text-mute)',
-                  transition: 'color .2s',
-                }}>
-                  <MousePointerClick style={{ width: 14, height: 14 }} />
-                  {activeStep === i ? 'Fechar detalhes' : 'Ver detalhes'}
-                  {i === 0 && activeStep === null && (
-                    <span className="click-arrow" style={{ display: 'inline-flex', marginLeft: 2 }}>
-                      <ArrowRight style={{ width: 13, height: 13 }} />
-                    </span>
-                  )}
-                </div>
-              </button>
-            ))}
+            {STEPS.map((s, i) => {
+              const btn = (
+                <button
+                  className={`step reveal ${i === 0 && activeStep === null ? 'step-click-hint' : ''}`}
+                  data-step-idx={i}
+                  data-delay={String(i + 1) as any}
+                  onClick={() => handleStepClick(i)}
+                  style={{
+                    textAlign: 'left', cursor: 'pointer', width: '100%',
+                    borderColor: activeStep === i ? 'rgba(108,60,225,.6)' : undefined,
+                    background: activeStep === i
+                      ? 'linear-gradient(180deg,rgba(108,60,225,.12),rgba(108,60,225,.04))'
+                      : undefined,
+                    boxShadow: activeStep === i ? '0 0 0 1px rgba(108,60,225,.4)' : undefined,
+                    outline: 'none',
+                  }}
+                >
+                  <span className="step-num">{s.num}</span>
+                  <div className="step-icon">{s.icon}</div>
+                  <h3>{s.title}</h3>
+                  <p>{s.desc}</p>
+                  <div style={{
+                    marginTop: 18, display: 'flex', alignItems: 'center', gap: 6,
+                    fontSize: 13, fontWeight: 500,
+                    color: activeStep === i ? 'var(--accent)' : 'var(--text-mute)',
+                    transition: 'color .2s',
+                  }}>
+                    <MousePointerClick style={{ width: 14, height: 14 }} />
+                    {activeStep === i ? 'Fechar detalhes' : 'Ver detalhes'}
+                  </div>
+                </button>
+              )
+
+              if (i === 0) {
+                return (
+                  <div key={i} style={{ position: 'relative' }}>
+                    {activeStep === null && (
+                      <div className="float-hand">
+                        <div className="float-hand-ring" />
+                        <div className="float-hand-inner">
+                          <MousePointerClick />
+                        </div>
+                      </div>
+                    )}
+                    {btn}
+                  </div>
+                )
+              }
+
+              return <div key={i}>{btn}</div>
+            })}
           </div>
 
           {/* Step detail panel */}
@@ -815,13 +945,55 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── LEAD CAPTURE ── */}
+      <section className="lp-section" id="leads" style={{ borderTop: '1px solid var(--line)' }}>
+        <div className="wrap">
+          <div className="reveal" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }}>
+            {/* Left — text */}
+            <div>
+              <span className="eyebrow" style={{ marginBottom: 18, display: 'inline-flex' }}>Captação de leads</span>
+              <h2 style={{ marginTop: 12, marginBottom: 20 }}>
+                Pare de perder leads.<br />
+                Seu agente captura todos — 24h por dia.
+              </h2>
+              <p style={{ fontSize: 15, lineHeight: 1.75, color: 'var(--text-dim)', marginBottom: 32 }}>
+                Você paga por marketing, mas quando o lead chega às 22h ninguém atende — e ele vai pro concorrente.
+                Seu agente captura, qualifica e registra cada contato. Você acorda com uma lista de oportunidades prontas para fechar.
+              </p>
+              <ul style={{ listStyle: 'none', margin: '0 0 36px', padding: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {[
+                  'Coleta nome, contato e intenção de compra de cada conversa',
+                  'Qualifica leads com perguntas específicas do seu setor',
+                  'Alerta no WhatsApp quando um lead quente entra',
+                  'Painel com histórico completo de cada lead',
+                  'Follow-up automático para leads que não fecharam',
+                  'Relatório diário de leads por email ou WhatsApp',
+                ].map((f, i) => (
+                  <li key={i} style={{ display: 'flex', gap: 10, fontSize: 14, color: 'var(--text-dim)', lineHeight: 1.5 }}>
+                    <CheckCircle2 style={{ color: 'var(--accent)', flexShrink: 0, width: 16, height: 16, marginTop: 2 }} />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link to="/register" className="btn btn-primary btn-lg">
+                Capturar mais leads <ArrowRight />
+              </Link>
+            </div>
+            {/* Right — visual */}
+            <div>
+              <VisualLeads />
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── CASOS DE USO ── */}
       <section className="lp-section" id="casos" style={{ borderTop: '1px solid var(--line)' }}>
         <div className="wrap">
           <div className="section-head reveal">
             <span className="eyebrow">Templates por setor</span>
             <h2 style={{ marginTop: 18 }}>Veja como o agente se comporta<br />no seu tipo de negócio</h2>
-            <p>Cada template é otimizado para o seu setor. Clique para ver como funciona na prática.</p>
+            <p>Cada template é otimizado para o seu setor. <strong style={{ color: 'var(--accent)' }}>Clique</strong> para ver como funciona na prática.</p>
           </div>
 
           {/* Template grid */}

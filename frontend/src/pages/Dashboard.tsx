@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Phone, MessageSquare, TrendingUp, Clock, Zap, AlertTriangle, ChevronRight } from 'lucide-react'
+import { Phone, MessageSquare, TrendingUp, Clock, Zap, AlertTriangle, ChevronRight, UserPlus, Flame } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { dashboardApi, agentApi } from '@/lib/api'
 
@@ -202,6 +202,64 @@ export default function DashboardPage() {
         <StatCard icon={TrendingUp} label="Hoje" value={conversations?.today ?? 0} color="accent" />
         <StatCard icon={Phone} label="Minutos usados" value={`${tenant?.minutesUsed ?? 0}/${tenant?.minutesLimit ?? 0}`} color="blue" />
         <StatCard icon={Clock} label="Uso do plano" value={`${tenant?.usagePercent ?? 0}%`} color={tenant?.usagePercent > 80 ? 'red' : 'green'} />
+      </div>
+
+      {/* Leads widget */}
+      <div className="card p-5 mb-8 border-orange-500/20">
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="font-semibold text-white flex items-center gap-2">
+            <UserPlus className="h-4 w-4 text-orange-400" />
+            Leads capturados
+          </h2>
+          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-400 border border-orange-500/20">
+            Em breve
+          </span>
+        </div>
+        <p className="text-xs text-gray-500 mb-5">
+          Cada atendimento em que o agente coletou dados de contato aparecerá aqui como lead qualificado, com histórico completo da conversa.
+        </p>
+
+        {/* Sample leads preview */}
+        <div className="space-y-2 opacity-40 pointer-events-none select-none mb-4">
+          {[
+            { initials: 'FO', name: 'Fernanda Oliveira', intent: 'Apartamento 2q · R$400k', channel: 'WhatsApp', tag: 'quente', time: '08:42' },
+            { initials: 'RS', name: 'Ricardo Santos',   intent: 'Reforma hidráulica urgente', channel: 'Telefone', tag: 'novo',    time: '09:15' },
+            { initials: 'AM', name: 'Ana Paula M.',     intent: 'Matrícula curso de inglês',  channel: 'WhatsApp', tag: 'novo',    time: '10:03' },
+          ].map((lead, i) => {
+            const tagStyle =
+              lead.tag === 'quente'
+                ? 'bg-orange-500/20 text-orange-400'
+                : 'bg-primary/20 text-primary'
+            return (
+              <div key={i} className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg border border-gray-700/50">
+                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary/30 to-accent/20 flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0">
+                  {lead.initials}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-200 truncate">{lead.name}</p>
+                  <p className="text-xs text-gray-500 truncate">{lead.channel} · {lead.intent}</p>
+                </div>
+                <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                  <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-full ${tagStyle}`}>
+                    {lead.tag === 'quente' ? '🔥 Quente' : 'Novo'}
+                  </span>
+                  <span className="text-[10px] text-gray-600">{lead.time}</span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Hot lead alert preview */}
+        <div className="bg-orange-500/5 border border-orange-500/20 rounded-lg px-4 py-3 flex items-start gap-3">
+          <Flame className="h-4 w-4 text-orange-400 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-xs font-semibold text-orange-400 mb-0.5">Como funciona o alerta de lead quente</p>
+            <p className="text-xs text-gray-400 leading-relaxed">
+              Quando o agente detectar alta intenção de compra, você receberá uma notificação imediata no WhatsApp com nome, contato e o que o cliente quer — antes que ele vá para o concorrente.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Channels status */}
