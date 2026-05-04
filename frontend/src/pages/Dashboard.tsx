@@ -107,48 +107,48 @@ export default function DashboardPage() {
 
       {tenant?.whatsappError && (
         <div className="card border-red-500/25 bg-red-500/5 mb-6 overflow-hidden">
-          <div className="flex items-center gap-3 px-5 py-4">
-            <AlertTriangle className="h-4 w-4 text-red-400 flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-red-300">WhatsApp com problema</p>
-              <p className="text-xs text-gray-400 mt-0.5">{tenant.whatsappError}</p>
+          <div className="flex items-center justify-between gap-3 px-5 py-4">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <AlertTriangle className="h-5 w-5 text-red-400 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-red-300">
+                  {tenant.whatsappError.includes('131042') ? 'Créditos da Meta esgotados' : 
+                   tenant.whatsappError.includes('190') ? 'Problema de Autenticação na Meta' : 
+                   'WhatsApp com problema'}
+                </p>
+                <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">
+                  {tenant.whatsappError.includes('131042') 
+                    ? `A Meta não conseguiu cobrar seu cartão. ${tenant.whatsappEnabled ? 'O sistema está operando via Evolution API (Fallback).' : 'O atendimento automático parou.'}`
+                    : tenant.whatsappError.includes('190')
+                    ? 'O token de acesso da Meta expirou ou foi invalidado. Isso pode ocorrer por falta de pagamento ou alteração de senha.'
+                    : tenant.whatsappError}
+                </p>
+              </div>
             </div>
-            <Link
-              to="/app/settings"
-              className="flex items-center gap-1 text-xs font-medium text-red-400 hover:text-red-300 transition-colors whitespace-nowrap flex-shrink-0"
-            >
-              Verificar <ChevronRight className="h-3.5 w-3.5" />
-            </Link>
+            
+            <div className="flex items-center gap-3">
+              {tenant.whatsappError.includes('131042') && (
+                <a 
+                  href="https://business.facebook.com/settings/whatsapp-business-accounts/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-medium rounded-md transition-colors"
+                >
+                  Resolver na Meta
+                </a>
+              )}
+              <Link
+                to="/app/settings"
+                className="flex items-center gap-1 text-xs font-medium text-red-400 hover:text-red-300 transition-colors whitespace-nowrap"
+              >
+                Configurações <ChevronRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Critical Alerts */}
-      {tenant?.whatsappError?.includes('131042') && (
-        <div className="card border-red-500/25 bg-red-500/5 mb-6 overflow-hidden">
-          <div className="flex items-center justify-between gap-3 px-5 py-4">
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="h-5 w-5 text-red-400 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-semibold text-red-300">
-                  Créditos do WhatsApp esgotados
-                </p>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  A Meta não conseguiu cobrar seu cartão. {tenant.whatsappEnabled ? 'O sistema está operando via Evolution API (Fallback).' : 'O atendimento automático parou.'}
-                </p>
-              </div>
-            </div>
-            <a 
-              href="https://business.facebook.com/settings/whatsapp-business-accounts/" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-medium rounded-md transition-colors"
-            >
-              Resolver na Meta
-            </a>
-          </div>
-        </div>
-      )}
+      {/* Critical Alerts (Legacy/Specific - already covered above) */}
 
       {/* Unanswered messages due to WhatsApp credit exhaustion */}
       {tenant?.unansweredMessages?.length > 0 && (
