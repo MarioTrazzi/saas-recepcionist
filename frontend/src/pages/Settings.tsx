@@ -327,7 +327,7 @@ export default function SettingsPage() {
                 <div className="flex items-start gap-2 bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-3">
                   <AlertCircle className="h-3.5 w-3.5 text-yellow-500 flex-shrink-0 mt-0.5" />
                   <p className="text-[11px] text-gray-400 leading-relaxed">
-                    Após salvar, clique em <strong className="text-yellow-500">Inscrever-se</strong> ao lado do campo <strong className="text-gray-200">messages</strong> na tabela de campos de objeto. O botão deve mudar para "Cancelar inscrição" para estar ativo.
+                    Certifique-se de que o botão ao lado do campo <strong className="text-gray-200">messages</strong> na tabela de campos de objeto esteja como <strong className="text-green-500">Unsubscribe</strong> para ativar o serviço. O status precisa estar como <strong className="text-green-500">Subscribed</strong>.
                   </p>
                 </div>
               </div>

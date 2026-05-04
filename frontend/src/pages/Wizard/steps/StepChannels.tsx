@@ -413,11 +413,11 @@ export function StepChannels({ data, update, onNext, onBack }: Props) {
 
               <div className="space-y-2">
                 <div className="rounded-lg bg-gray-900/60 border border-yellow-500/20 px-3 py-2.5">
-                  <p className="text-xs font-semibold text-yellow-200 mb-1">1. "Inscrever-se" / "Subscribe" não significa que está inscrito</p>
+                  <p className="text-xs font-semibold text-yellow-200 mb-1">1. "Subscribe" não significa que está inscrito</p>
                   <p className="text-xs text-gray-300 leading-relaxed">
-                    Na Meta, <strong className="text-yellow-300">tudo aparece com o botão "Inscrever-se" por padrão</strong> — e isso confunde.
-                    Se você está vendo "Inscrever-se" no evento <code className="bg-gray-800 px-1 rounded text-yellow-300">messages</code>, você <strong>NÃO está inscrito ainda</strong> — clique nele.
-                    Quando o botão virar <strong className="text-green-300">"Cancelar inscrição"</strong>, aí sim está inscrito.
+                    Na Meta, <strong className="text-yellow-300">tudo aparece com o botão "Subscribe" por padrão</strong> — e isso confunde.
+                    Se o botão ao lado de <code className="bg-gray-800 px-1 rounded text-yellow-300">messages</code> diz "Subscribe", você <strong>NÃO está inscrito ainda</strong>.
+                    Clique nele até que o botão mude para <strong className="text-green-300">"Unsubscribe"</strong> e o status fique como <strong className="text-green-300">Subscribed</strong>.
                   </p>
                 </div>
 
@@ -480,8 +480,8 @@ export function StepChannels({ data, update, onNext, onBack }: Props) {
                       <li>Cole a URL e o token abaixo</li>
                       <li>Confirme — o Meta vai testar a conexão</li>
                       <li>
-                        Na lista de eventos, clique em <strong className="text-yellow-300">Inscrever-se</strong> ao lado de <code className="bg-gray-800 px-1 rounded">messages</code>.
-                        Confirme que o botão virou <strong className="text-green-300">"Cancelar inscrição"</strong> — só assim você está realmente inscrito.
+                        Na lista de eventos, clique em <strong className="text-yellow-300">Subscribe</strong> ao lado de <code className="bg-gray-800 px-1 rounded">messages</code>.
+                        Certifique-se de que o botão mudou para <strong className="text-green-300">Unsubscribe</strong> e o status está como <strong className="text-green-300">Subscribed</strong> para ativar o serviço.
                       </li>
                     </ol>
                     <div className="space-y-2">
