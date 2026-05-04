@@ -119,16 +119,17 @@ export class SupportService {
   constructor(private readonly config: ConfigService) {
     const groqKey = config.get<string>('GROQ_API_KEY')
     const geminiKey = config.get<string>('GEMINI_API_KEY')
+    const openaiKey = config.get<string>('OPENAI_API_KEY')
 
-    if (groqKey) {
-      this.openai = new OpenAI({ apiKey: groqKey, baseURL: 'https://api.groq.com/openai/v1' })
-      this.model = config.get('GROQ_MODEL') || 'llama-3.3-70b-versatile'
+    if (openaiKey) {
+      this.openai = new OpenAI({ apiKey: openaiKey })
+      this.model = config.get('OPENAI_MODEL') || 'gpt-4o-mini'
     } else if (geminiKey) {
       this.openai = new OpenAI({ apiKey: geminiKey, baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/' })
       this.model = config.get('GEMINI_MODEL') || 'gemini-2.0-flash'
-    } else {
-      this.openai = new OpenAI({ apiKey: config.get('OPENAI_API_KEY') })
-      this.model = config.get('OPENAI_MODEL') || 'gpt-4o-mini'
+    } else if (groqKey) {
+      this.openai = new OpenAI({ apiKey: groqKey, baseURL: 'https://api.groq.com/openai/v1' })
+      this.model = config.get('GROQ_MODEL') || 'llama-3.3-70b-versatile'
     }
   }
 

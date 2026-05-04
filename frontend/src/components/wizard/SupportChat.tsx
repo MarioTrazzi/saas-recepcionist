@@ -6,6 +6,8 @@ type ChatMessage = { role: 'user' | 'assistant'; content: string }
 
 interface Props {
   currentStep: number
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
 const QUICK_PROMPTS_BY_STEP: Record<number, string[]> = {
@@ -43,8 +45,17 @@ const FALLBACK_PROMPTS = [
   'O agente não está recebendo mensagens',
 ]
 
-export function SupportChat({ currentStep }: Props) {
-  const [open, setOpen] = useState(false)
+export function SupportChat({ currentStep, open: controlledOpen, onOpenChange }: Props) {
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
+
+  const isControlled = controlledOpen !== undefined
+  const open = isControlled ? controlledOpen : uncontrolledOpen
+
+  const setOpen = (v: boolean) => {
+    if (!isControlled) setUncontrolledOpen(v)
+    onOpenChange?.(v)
+  }
+
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [sending, setSending] = useState(false)

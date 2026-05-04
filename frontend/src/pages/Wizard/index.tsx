@@ -81,6 +81,7 @@ export default function WizardPage() {
   const [step, setStep] = useState(1)
   const [data, setData] = useState<WizardData>(EMPTY)
   const [saving, setSaving] = useState(false)
+  const [chatOpen, setChatOpen] = useState(false)
   const navigate = useNavigate()
 
   const update = (partial: Partial<WizardData>) => setData(d => ({ ...d, ...partial }))
@@ -177,12 +178,12 @@ export default function WizardPage() {
         {step === 1 && <StepTemplate {...stepProps} />}
         {step === 2 && <StepPersonalize {...stepProps} />}
         {step === 3 && <StepKnowledge {...stepProps} />}
-        {step === 4 && <StepChannels {...stepProps} />}
+        {step === 4 && <StepChannels {...stepProps} onOpenSupport={() => setChatOpen(true)} />}
         {step === 5 && <StepHandoff {...stepProps} />}
         {step === 6 && <StepActivate {...stepProps} onFinish={finish} saving={saving} />}
       </div>
 
-      <SupportChat currentStep={step} />
+      <SupportChat currentStep={step} open={chatOpen} onOpenChange={setChatOpen} />
     </div>
   )
 }

@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import {
   ChevronRight, ChevronLeft, Phone, MessageSquare, CheckCircle,
   AlertCircle, Loader2, ExternalLink, Copy, Check, KeyRound,
-  Shield, Zap, Star, Search, AlertTriangle, Rocket,
+  Shield, Zap, Star, Search, Sparkles,
 } from 'lucide-react'
 import { WizardData } from '../index'
 import { whatsappApi, phoneApi } from '@/lib/api'
@@ -13,6 +13,7 @@ interface Props {
   update: (d: Partial<WizardData>) => void
   onNext: () => void
   onBack: () => void
+  onOpenSupport?: () => void
 }
 
 interface PhoneNumberOption {
@@ -56,6 +57,103 @@ const DDD_REGIONS: Record<string, string> = {
   '91': 'Belém - PA',
   '92': 'Manaus - AM',
   '98': 'São Luís - MA',
+}
+
+const BR_STATES: Array<{ uf: string; name: string }> = [
+  { uf: 'AC', name: 'Acre' },
+  { uf: 'AL', name: 'Alagoas' },
+  { uf: 'AP', name: 'Amapá' },
+  { uf: 'AM', name: 'Amazonas' },
+  { uf: 'BA', name: 'Bahia' },
+  { uf: 'CE', name: 'Ceará' },
+  { uf: 'DF', name: 'Distrito Federal' },
+  { uf: 'ES', name: 'Espírito Santo' },
+  { uf: 'GO', name: 'Goiás' },
+  { uf: 'MA', name: 'Maranhão' },
+  { uf: 'MT', name: 'Mato Grosso' },
+  { uf: 'MS', name: 'Mato Grosso do Sul' },
+  { uf: 'MG', name: 'Minas Gerais' },
+  { uf: 'PA', name: 'Pará' },
+  { uf: 'PB', name: 'Paraíba' },
+  { uf: 'PR', name: 'Paraná' },
+  { uf: 'PE', name: 'Pernambuco' },
+  { uf: 'PI', name: 'Piauí' },
+  { uf: 'RJ', name: 'Rio de Janeiro' },
+  { uf: 'RN', name: 'Rio Grande do Norte' },
+  { uf: 'RS', name: 'Rio Grande do Sul' },
+  { uf: 'RO', name: 'Rondônia' },
+  { uf: 'RR', name: 'Roraima' },
+  { uf: 'SC', name: 'Santa Catarina' },
+  { uf: 'SP', name: 'São Paulo' },
+  { uf: 'SE', name: 'Sergipe' },
+  { uf: 'TO', name: 'Tocantins' },
+]
+
+const STATE_CITIES: Record<string, Array<{ name: string; ddd: string }>> = {
+  SP: [
+    { name: 'São Paulo', ddd: '11' }, { name: 'Campinas', ddd: '19' }, { name: 'Guarulhos', ddd: '11' },
+    { name: 'São Bernardo do Campo', ddd: '11' }, { name: 'Santo André', ddd: '11' }, { name: 'Osasco', ddd: '11' },
+    { name: 'Santos', ddd: '13' }, { name: 'Ribeirão Preto', ddd: '16' }, { name: 'Sorocaba', ddd: '15' },
+    { name: 'São José dos Campos', ddd: '12' }, { name: 'São José do Rio Preto', ddd: '17' }, { name: 'Bauru', ddd: '14' },
+    { name: 'Presidente Prudente', ddd: '18' }, { name: 'Jundiaí', ddd: '11' },
+  ],
+  RJ: [
+    { name: 'Rio de Janeiro', ddd: '21' }, { name: 'Niterói', ddd: '21' }, { name: 'São Gonçalo', ddd: '21' },
+    { name: 'Duque de Caxias', ddd: '21' }, { name: 'Nova Iguaçu', ddd: '21' }, { name: 'Campos dos Goytacazes', ddd: '22' },
+    { name: 'Volta Redonda', ddd: '24' }, { name: 'Petrópolis', ddd: '24' },
+  ],
+  MG: [
+    { name: 'Belo Horizonte', ddd: '31' }, { name: 'Uberlândia', ddd: '34' }, { name: 'Contagem', ddd: '31' },
+    { name: 'Juiz de Fora', ddd: '32' }, { name: 'Betim', ddd: '31' }, { name: 'Montes Claros', ddd: '38' },
+  ],
+  ES: [
+    { name: 'Vitória', ddd: '27' }, { name: 'Vila Velha', ddd: '27' }, { name: 'Serra', ddd: '27' },
+    { name: 'Cariacica', ddd: '27' },
+  ],
+  PR: [
+    { name: 'Curitiba', ddd: '41' }, { name: 'Londrina', ddd: '43' }, { name: 'Maringá', ddd: '44' },
+    { name: 'Ponta Grossa', ddd: '42' }, { name: 'Foz do Iguaçu', ddd: '45' }, { name: 'Cascavel', ddd: '45' },
+  ],
+  SC: [
+    { name: 'Florianópolis', ddd: '48' }, { name: 'Joinville', ddd: '47' }, { name: 'Blumenau', ddd: '47' },
+    { name: 'São José', ddd: '48' }, { name: 'Criciúma', ddd: '48' }, { name: 'Chapecó', ddd: '49' },
+  ],
+  RS: [
+    { name: 'Porto Alegre', ddd: '51' }, { name: 'Caxias do Sul', ddd: '54' }, { name: 'Pelotas', ddd: '53' },
+    { name: 'Canoas', ddd: '51' }, { name: 'Santa Maria', ddd: '55' }, { name: 'Passo Fundo', ddd: '54' },
+  ],
+  BA: [
+    { name: 'Salvador', ddd: '71' }, { name: 'Feira de Santana', ddd: '75' }, { name: 'Vitória da Conquista', ddd: '77' },
+    { name: 'Camaçari', ddd: '71' }, { name: 'Itabuna', ddd: '73' },
+  ],
+  PE: [
+    { name: 'Recife', ddd: '81' }, { name: 'Jaboatão dos Guararapes', ddd: '81' }, { name: 'Olinda', ddd: '81' },
+    { name: 'Caruaru', ddd: '81' }, { name: 'Petrolina', ddd: '87' },
+  ],
+  CE: [
+    { name: 'Fortaleza', ddd: '85' }, { name: 'Caucaia', ddd: '85' }, { name: 'Juazeiro do Norte', ddd: '88' },
+    { name: 'Maracanaú', ddd: '85' }, { name: 'Sobral', ddd: '88' },
+  ],
+  DF: [{ name: 'Brasília', ddd: '61' }],
+  GO: [
+    { name: 'Goiânia', ddd: '62' }, { name: 'Aparecida de Goiânia', ddd: '62' }, { name: 'Anápolis', ddd: '62' },
+    { name: 'Rio Verde', ddd: '64' },
+  ],
+  MT: [{ name: 'Cuiabá', ddd: '65' }, { name: 'Várzea Grande', ddd: '65' }, { name: 'Rondonópolis', ddd: '66' }],
+  MS: [{ name: 'Campo Grande', ddd: '67' }, { name: 'Dourados', ddd: '67' }],
+  PA: [{ name: 'Belém', ddd: '91' }, { name: 'Ananindeua', ddd: '91' }, { name: 'Santarém', ddd: '93' }],
+  AM: [{ name: 'Manaus', ddd: '92' }],
+  MA: [{ name: 'São Luís', ddd: '98' }, { name: 'Imperatriz', ddd: '99' }],
+  PB: [{ name: 'João Pessoa', ddd: '83' }, { name: 'Campina Grande', ddd: '83' }],
+  RN: [{ name: 'Natal', ddd: '84' }, { name: 'Mossoró', ddd: '84' }],
+  AL: [{ name: 'Maceió', ddd: '82' }, { name: 'Arapiraca', ddd: '82' }],
+  SE: [{ name: 'Aracaju', ddd: '79' }],
+  PI: [{ name: 'Teresina', ddd: '86' }],
+  RO: [{ name: 'Porto Velho', ddd: '69' }],
+  TO: [{ name: 'Palmas', ddd: '63' }],
+  AC: [{ name: 'Rio Branco', ddd: '68' }],
+  AP: [{ name: 'Macapá', ddd: '96' }],
+  RR: [{ name: 'Boa Vista', ddd: '95' }],
 }
 
 const MOCK_POOL: Array<{ phoneNumber: string; ddd: string }> = [
@@ -130,13 +228,15 @@ function CopyButton({ text }: { text: string }) {
   )
 }
 
-export function StepChannels({ data, update, onNext, onBack }: Props) {
+export function StepChannels({ data, update, onNext, onBack, onOpenSupport }: Props) {
   const [verifying, setVerifying] = useState(false)
   const [verifyError, setVerifyError] = useState('')
   const [evolutionVerifying, setEvolutionVerifying] = useState(false)
   const [evolutionVerifyError, setEvolutionVerifyError] = useState('')
   const [evolutionQrCode, setEvolutionQrCode] = useState('')
-  const [dddSearch, setDddSearch] = useState('')
+  const [dddSearch, setDddSearch] = useState('11')
+  const [selectedState, setSelectedState] = useState('')
+  const [selectedCity, setSelectedCity] = useState('')
   const [searchResults, setSearchResults] = useState<PhoneNumberOption[] | null>(null)
 
   const webhookUrl = `${window.location.origin.replace('5173', '3001')}/api/whatsapp/meta-webhook`
@@ -151,7 +251,9 @@ export function StepChannels({ data, update, onNext, onBack }: Props) {
 
   useEffect(() => {
     if (!data.phoneEnabled) {
-      setDddSearch('')
+      setDddSearch('11')
+      setSelectedState('')
+      setSelectedCity('')
       setSearchResults(null)
     }
   }, [data.phoneEnabled])
@@ -284,30 +386,71 @@ export function StepChannels({ data, update, onNext, onBack }: Props) {
                 </div>
               ) : (
                 <>
-                  {/* DDD search input */}
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 pointer-events-none select-none">+55</span>
+                  {/* DDD / Estado / Cidade search */}
+                  <div className="flex gap-2 flex-wrap">
+                    <div className="w-16">
+                      <label className="text-[10px] text-gray-500 block mb-1">DDD</label>
                       <input
                         value={dddSearch}
                         onChange={e => {
                           setDddSearch(e.target.value.replace(/\D/g, '').slice(0, 2))
+                          setSelectedState('')
+                          setSelectedCity('')
                           setSearchResults(null)
                         }}
-                        onKeyDown={e => e.key === 'Enter' && dddSearch.length >= 2 && handleSearch()}
-                        placeholder="17"
+                        placeholder="11"
                         maxLength={2}
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-12 pr-3 py-2 text-sm font-mono text-gray-100 placeholder-gray-600 focus:border-primary focus:ring-1 focus:ring-primary/50 outline-none"
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-2 text-sm font-mono text-gray-100 placeholder-gray-600 text-center focus:border-primary focus:ring-1 focus:ring-primary/50 outline-none"
                       />
                     </div>
-                    <button
-                      type="button"
-                      onClick={handleSearch}
-                      disabled={dddSearch.length < 2}
-                      className="btn-primary text-sm px-4 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
-                    >
-                      <Search className="h-4 w-4" /> Buscar
-                    </button>
+                    <div className="flex-1 min-w-[110px]">
+                      <label className="text-[10px] text-gray-500 block mb-1">Estado</label>
+                      <select
+                        value={selectedState}
+                        onChange={e => {
+                          setSelectedState(e.target.value)
+                          setSelectedCity('')
+                          setSearchResults(null)
+                        }}
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-2 text-sm text-gray-100 focus:border-primary focus:ring-1 focus:ring-primary/50 outline-none"
+                      >
+                        <option value="">Selecione</option>
+                        {BR_STATES.map(s => (
+                          <option key={s.uf} value={s.uf}>{s.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex-1 min-w-[130px]">
+                      <label className="text-[10px] text-gray-500 block mb-1">Cidade</label>
+                      <select
+                        value={selectedCity}
+                        onChange={e => {
+                          const city = e.target.value
+                          setSelectedCity(city)
+                          const st = STATE_CITIES[selectedState]
+                          const found = st?.find(c => c.name === city)
+                          if (found) setDddSearch(found.ddd)
+                          setSearchResults(null)
+                        }}
+                        disabled={!selectedState}
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-2 text-sm text-gray-100 focus:border-primary focus:ring-1 focus:ring-primary/50 outline-none disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <option value="">Selecione</option>
+                        {selectedState && (STATE_CITIES[selectedState] ?? []).map(c => (
+                          <option key={c.name} value={c.name}>{c.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex items-end">
+                      <button
+                        type="button"
+                        onClick={handleSearch}
+                        disabled={dddSearch.length < 2}
+                        className="btn-primary text-sm px-4 py-2 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                        <Search className="h-4 w-4" /> Buscar
+                      </button>
+                    </div>
                   </div>
 
                   {/* Search results */}
@@ -404,204 +547,125 @@ export function StepChannels({ data, update, onNext, onBack }: Props) {
         {data.whatsappEnabled && !data.whatsappVerified && (
           <div className="pl-2 space-y-3">
 
-            {/* Pegadinhas comuns — leia antes */}
-            <div className="card border-yellow-500/40 bg-yellow-500/5 p-4 space-y-3">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-yellow-400 flex-shrink-0" />
-                <p className="text-sm font-semibold text-yellow-200">Antes de começar — duas pegadinhas que travam quase todo mundo</p>
-              </div>
-
-              <div className="space-y-2">
-                <div className="rounded-lg bg-gray-900/60 border border-yellow-500/20 px-3 py-2.5">
-                  <p className="text-xs font-semibold text-yellow-200 mb-1">1. "Subscribe" não significa que está inscrito</p>
-                  <p className="text-xs text-gray-300 leading-relaxed">
-                    Na Meta, <strong className="text-yellow-300">tudo aparece com o botão "Subscribe" por padrão</strong> — e isso confunde.
-                    Se o botão ao lado de <code className="bg-gray-800 px-1 rounded text-yellow-300">messages</code> diz "Subscribe", você <strong>NÃO está inscrito ainda</strong>.
-                    Clique nele até que o botão mude para <strong className="text-green-300">"Unsubscribe"</strong> e o status fique como <strong className="text-green-300">Subscribed</strong>.
-                  </p>
-                </div>
-
-                <div className="rounded-lg bg-gray-900/60 border border-yellow-500/20 px-3 py-2.5">
-                  <p className="text-xs font-semibold text-yellow-200 mb-1 flex items-center gap-1.5">
-                    <Rocket className="h-3 w-3" /> 2. Publique o app antes de usar com seu número real
-                  </p>
-                  <p className="text-xs text-gray-300 leading-relaxed">
-                    Por padrão o app fica em modo <strong className="text-yellow-300">Desenvolvimento</strong>, que só funciona com o número de teste da Meta.
-                    Em <strong className="text-gray-200">Configurações Básicas</strong>, mude o app para <strong className="text-green-300">Em Operação (Live)</strong> antes de testar com seus clientes.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Step guide */}
-            <div className="card p-5 space-y-4">
+            {/* Setup card */}
+            <div className="card p-5 space-y-5">
               <div className="flex items-center gap-2">
                 <KeyRound className="h-4 w-4 text-green-400" />
                 <p className="text-sm font-semibold text-white">Configure sua conta no Meta Developers</p>
               </div>
 
-              <ol className="space-y-4">
-                {/* Step 1 */}
-                <li className="flex gap-3">
-                  <span className="flex-shrink-0 h-5 w-5 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center text-[10px] font-bold mt-0.5">1</span>
-                  <div className="flex-1 text-sm text-gray-400">
-                    <p className="text-gray-200 font-medium mb-1">Crie um app no Meta Developers</p>
-                    <a
-                      href="https://developers.facebook.com/apps/creation/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs text-green-400 hover:text-green-300 transition-colors"
-                      onClick={e => e.stopPropagation()}
-                    >
-                      <ExternalLink className="h-3 w-3" /> developers.facebook.com/apps → Criar app → Empresa
-                    </a>
-                    <p className="mt-1 text-xs">Escolha o tipo <strong className="text-gray-200">Empresa</strong> e adicione o produto <strong className="text-gray-200">WhatsApp</strong>.</p>
-                  </div>
-                </li>
+              {/* 1. Create app */}
+              <div>
+                <p className="text-xs text-gray-500 mb-1.5">1. Crie um app no Meta Developers</p>
+                <a
+                  href="https://developers.facebook.com/apps/creation/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs text-green-400 hover:text-green-300 transition-colors"
+                  onClick={e => e.stopPropagation()}
+                >
+                  <ExternalLink className="h-3.5 w-3.5" /> Criar app → Tipo Empresa → Adicionar produto WhatsApp
+                </a>
+              </div>
 
-                {/* Step 2 */}
-                <li className="flex gap-3">
-                  <span className="flex-shrink-0 h-5 w-5 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center text-[10px] font-bold mt-0.5">2</span>
-                  <div className="flex-1 text-sm text-gray-400">
-                    <p className="text-gray-200 font-medium mb-1">Copie o Phone Number ID e gere um Token permanente</p>
-                    <p className="text-xs">No painel do app: <strong className="text-gray-200">WhatsApp → Configuração da API</strong>. Copie o <strong className="text-gray-200">ID do número de telefone</strong> e gere um token de acesso permanente em <strong className="text-gray-200">Configurações do sistema</strong>.</p>
-                  </div>
-                </li>
-
-                {/* Step 3 */}
-                <li className="flex gap-3">
-                  <span className="flex-shrink-0 h-5 w-5 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center text-[10px] font-bold mt-0.5">3</span>
-                  <div className="flex-1 text-sm text-gray-400">
-                    <p className="text-gray-200 font-medium mb-2">Configure o webhook no Meta</p>
-                    <p className="text-xs mb-2">No painel do Meta Developers:</p>
-                    <ol className="text-xs space-y-1.5 mb-3 list-decimal list-inside">
-                      <li>Navegue em <strong className="text-gray-200">Selecione o App → Casos de Utilização → WhatsApp (botão "Customize") → Configurações → Webhooks</strong></li>
-                      <li>Clique em <strong className="text-gray-200">Assinar webhook</strong> (ou "Configure a webhook")</li>
-                      <li>Cole a URL e o token abaixo</li>
-                      <li>Confirme — o Meta vai testar a conexão</li>
-                      <li>
-                        Na lista de eventos, clique em <strong className="text-yellow-300">Subscribe</strong> ao lado de <code className="bg-gray-800 px-1 rounded">messages</code>.
-                        Certifique-se de que o botão mudou para <strong className="text-green-300">Unsubscribe</strong> e o status está como <strong className="text-green-300">Subscribed</strong> para ativar o serviço.
-                      </li>
-                    </ol>
-                    <div className="space-y-2">
-                      <div className="rounded-lg bg-gray-900 border border-gray-700 px-3 py-2">
-                        <p className="text-[10px] text-gray-500 mb-1">URL do webhook</p>
-                        <div className="flex items-center gap-2">
-                          <code className="text-xs text-green-300 flex-1 break-all">{webhookUrl}</code>
-                          <CopyButton text={webhookUrl} />
-                        </div>
-                      </div>
-                      <div className="rounded-lg bg-gray-900 border border-gray-700 px-3 py-2">
-                        <p className="text-[10px] text-gray-500 mb-1">Token de verificação</p>
-                        <div className="flex items-center gap-2">
-                          <code className="text-xs text-green-300 flex-1">{verifyToken}</code>
-                          <CopyButton text={verifyToken} />
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => navigator.clipboard.writeText(`URL: ${webhookUrl}\nToken: ${verifyToken}`)}
-                        className="w-full flex items-center justify-center gap-2 text-xs font-medium text-green-400 bg-green-500/10 hover:bg-green-500/20 border border-green-500/25 rounded-lg px-3 py-2 transition-colors"
-                      >
-                        <Copy className="h-3.5 w-3.5" /> Copiar tudo (URL + Token)
-                      </button>
-                    </div>
-                    <p className="text-xs mt-2 text-yellow-400/80">Importante: sem assinar o evento <strong>messages</strong>, o agente não recebe mensagens.</p>
-                  </div>
-                </li>
-
-                {/* Pricing info */}
-                <li className="flex gap-3">
-                  <span className="flex-shrink-0 h-5 w-5 rounded-full bg-yellow-500/20 text-yellow-400 flex items-center justify-center text-[10px] font-bold mt-0.5">!</span>
-                  <div className="flex-1 text-sm text-gray-400">
-                    <p className="text-gray-200 font-medium mb-2">Custos da API do WhatsApp</p>
-                    <div className="rounded-lg bg-gray-900 border border-gray-700 p-3 space-y-2 text-xs">
-                      <p><strong className="text-green-400">Grátis:</strong> 1.000 conversas/mês incluídas pela Meta.</p>
-                      <p>Após esse limite, é necessário <strong className="text-gray-200">cadastrar um cartão de crédito</strong> no painel do Meta Business.</p>
-                      <div className="border-t border-gray-700 pt-2 mt-2">
-                        <p className="text-gray-300 font-medium mb-1">Estimativa de custos (Brasil):</p>
-                        <div className="grid grid-cols-3 gap-2 text-center">
-                          <div className="rounded-lg bg-gray-800 p-2">
-                            <p className="text-gray-500 text-[10px]">3.000 msgs</p>
-                            <p className="text-white font-semibold">~$0</p>
-                            <p className="text-gray-500 text-[10px]">plano gratuito</p>
-                          </div>
-                          <div className="rounded-lg bg-gray-800 p-2">
-                            <p className="text-gray-500 text-[10px]">7.000 msgs</p>
-                            <p className="text-white font-semibold">~$15/mês</p>
-                            <p className="text-gray-500 text-[10px]">~R$75</p>
-                          </div>
-                          <div className="rounded-lg bg-gray-800 p-2">
-                            <p className="text-gray-500 text-[10px]">15.000 msgs</p>
-                            <p className="text-white font-semibold">~$40/mês</p>
-                            <p className="text-gray-500 text-[10px]">~R$200</p>
-                          </div>
-                        </div>
-                      </div>
-                      <p className="text-gray-500 text-[10px]">* Conversas de serviço (respostas a clientes) são as mais baratas. Valores podem variar.</p>
+              {/* 2. Webhook */}
+              <div>
+                <p className="text-xs text-gray-500 mb-2">2. Configure o webhook com os dados abaixo</p>
+                <div className="space-y-2">
+                  <div className="rounded-lg bg-gray-900 border border-gray-700 px-3 py-2">
+                    <p className="text-[10px] text-gray-500 mb-1">URL do webhook</p>
+                    <div className="flex items-center gap-2">
+                      <code className="text-xs text-green-300 flex-1 break-all">{webhookUrl}</code>
+                      <CopyButton text={webhookUrl} />
                     </div>
                   </div>
-                </li>
-
-                {/* Step 4 — credential inputs */}
-                <li className="flex gap-3">
-                  <span className="flex-shrink-0 h-5 w-5 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center text-[10px] font-bold mt-0.5">4</span>
-                  <div className="flex-1 space-y-3">
-                    <p className="text-sm text-gray-200 font-medium">Cole suas credenciais e verifique</p>
-
-                    <div>
-                      <label className="text-xs text-gray-400 block mb-1">Meta App ID (opcional)</label>
-                      <input
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 font-mono placeholder-gray-600 focus:border-green-500 focus:ring-1 focus:ring-green-500/30 outline-none"
-                        placeholder="1456857732642595"
-                        value={data.metaAppId}
-                        onChange={e => update({ metaAppId: e.target.value.trim(), whatsappVerified: false })}
-                      />
+                  <div className="rounded-lg bg-gray-900 border border-gray-700 px-3 py-2">
+                    <p className="text-[10px] text-gray-500 mb-1">Token de verificação</p>
+                    <div className="flex items-center gap-2">
+                      <code className="text-xs text-green-300 flex-1">{verifyToken}</code>
+                      <CopyButton text={verifyToken} />
                     </div>
-
-                    <div>
-                      <label className="text-xs text-gray-400 block mb-1">Phone Number ID</label>
-                      <input
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 font-mono placeholder-gray-600 focus:border-green-500 focus:ring-1 focus:ring-green-500/30 outline-none"
-                        placeholder="1234567890123456"
-                        value={data.metaPhoneNumberId}
-                        onChange={e => update({ metaPhoneNumberId: e.target.value.trim(), whatsappVerified: false })}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-xs text-gray-400 block mb-1">Access Token</label>
-                      <input
-                        type="password"
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 font-mono placeholder-gray-600 focus:border-green-500 focus:ring-1 focus:ring-green-500/30 outline-none"
-                        placeholder="EAAxxxxxxxxxxxxxxx"
-                        value={data.metaAccessToken}
-                        onChange={e => update({ metaAccessToken: e.target.value.trim(), whatsappVerified: false })}
-                      />
-                    </div>
-
-                    {verifyError && (
-                      <div className="flex items-start gap-2 text-xs text-red-400">
-                        <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
-                        {verifyError}
-                      </div>
-                    )}
-
-                    <button
-                      onClick={handleVerify}
-                      disabled={verifying || !data.metaPhoneNumberId || !data.metaAccessToken}
-                      className="btn-secondary flex items-center gap-2 text-sm py-2 disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      {verifying
-                        ? <><Loader2 className="h-4 w-4 animate-spin" /> Verificando…</>
-                        : <><CheckCircle className="h-4 w-4" /> Verificar e conectar</>
-                      }
-                    </button>
                   </div>
-                </li>
-              </ol>
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard.writeText(`URL: ${webhookUrl}\nToken: ${verifyToken}`)}
+                    className="w-full flex items-center justify-center gap-2 text-xs font-medium text-green-400 bg-green-500/10 hover:bg-green-500/20 border border-green-500/25 rounded-lg px-3 py-2 transition-colors"
+                  >
+                    <Copy className="h-3.5 w-3.5" /> Copiar tudo (URL + Token)
+                  </button>
+                </div>
+              </div>
+
+              {/* 3. Credentials */}
+              <div className="space-y-3">
+                <p className="text-xs text-gray-500">3. Cole suas credenciais e verifique</p>
+                <div>
+                  <label className="text-xs text-gray-400 block mb-1">Meta App ID (opcional)</label>
+                  <input
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 font-mono placeholder-gray-600 focus:border-green-500 focus:ring-1 focus:ring-green-500/30 outline-none"
+                    placeholder="1456857732642595"
+                    value={data.metaAppId}
+                    onChange={e => update({ metaAppId: e.target.value.trim(), whatsappVerified: false })}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 block mb-1">Phone Number ID</label>
+                  <input
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 font-mono placeholder-gray-600 focus:border-green-500 focus:ring-1 focus:ring-green-500/30 outline-none"
+                    placeholder="1234567890123456"
+                    value={data.metaPhoneNumberId}
+                    onChange={e => update({ metaPhoneNumberId: e.target.value.trim(), whatsappVerified: false })}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 block mb-1">Access Token</label>
+                  <input
+                    type="password"
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 font-mono placeholder-gray-600 focus:border-green-500 focus:ring-1 focus:ring-green-500/30 outline-none"
+                    placeholder="EAAxxxxxxxxxxxxxxx"
+                    value={data.metaAccessToken}
+                    onChange={e => update({ metaAccessToken: e.target.value.trim(), whatsappVerified: false })}
+                  />
+                </div>
+                {verifyError && (
+                  <div className="flex items-start gap-2 text-xs text-red-400">
+                    <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
+                    {verifyError}
+                  </div>
+                )}
+                <button
+                  onClick={handleVerify}
+                  disabled={verifying || !data.metaPhoneNumberId || !data.metaAccessToken}
+                  className="btn-secondary flex items-center gap-2 text-sm py-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {verifying
+                    ? <><Loader2 className="h-4 w-4 animate-spin" /> Verificando…</>
+                    : <><CheckCircle className="h-4 w-4" /> Verificar e conectar</>
+                  }
+                </button>
+              </div>
             </div>
+
+            {/* Support advice */}
+            <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 flex gap-3 items-start">
+              <div className="h-8 w-8 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Sparkles className="h-4 w-4 text-primary" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-white">Ficou com dúvida na configuração?</p>
+                <p className="text-xs text-gray-400 mt-1 leading-relaxed">
+                  Nosso assistente de IA conhece cada detalhe do painel da Meta e pode te guiar passo a passo — inclusive os erros mais comuns.
+                </p>
+                <button
+                  type="button"
+                  onClick={onOpenSupport}
+                  className="mt-3 flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                >
+                  Falar com o assistente <ChevronRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+
           </div>
         )}
 

@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit, Logger } from '@nestjs/common'
+import { Injectable, OnModuleInit, Logger, HttpException, HttpStatus } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { ConfigService } from '@nestjs/config'
@@ -188,8 +188,7 @@ Seja consultivo: ajude o cliente a escolher o produto certo. Quando o cliente fe
 @Injectable()
 export class TemplatesService implements OnModuleInit {
   private readonly logger = new Logger(TemplatesService.name)
-  private openai: OpenAI | null = null
-  private model = 'gpt-4o-mini'
+  private providers: Array<{ client: OpenAI; model: string; name: string }> = []
 
   constructor(
     @InjectRepository(Template) private repo: Repository<Template>,
@@ -199,15 +198,26 @@ export class TemplatesService implements OnModuleInit {
     const geminiKey = config.get<string>('GEMINI_API_KEY')
     const openaiKey = config.get<string>('OPENAI_API_KEY')
 
+    if (openaiKey) {
+      this.providers.push({
+        client: new OpenAI({ apiKey: openaiKey }),
+        model: config.get('OPENAI_MODEL') || 'gpt-4o-mini',
+        name: 'OpenAI',
+      })
+    }
+    if (geminiKey) {
+      this.providers.push({
+        client: new OpenAI({ apiKey: geminiKey, baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/' }),
+        model: config.get('GEMINI_MODEL') || 'gemini-2.0-flash',
+        name: 'Gemini',
+      })
+    }
     if (groqKey) {
-      this.openai = new OpenAI({ apiKey: groqKey, baseURL: 'https://api.groq.com/openai/v1' })
-      this.model = config.get('GROQ_MODEL') || 'llama-3.3-70b-versatile'
-    } else if (geminiKey) {
-      this.openai = new OpenAI({ apiKey: geminiKey, baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/' })
-      this.model = config.get('GEMINI_MODEL') || 'gemini-2.0-flash'
-    } else if (openaiKey) {
-      this.openai = new OpenAI({ apiKey: openaiKey })
-      this.model = config.get('OPENAI_MODEL') || 'gpt-4o-mini'
+      this.providers.push({
+        client: new OpenAI({ apiKey: groqKey, baseURL: 'https://api.groq.com/openai/v1' }),
+        model: config.get('GROQ_MODEL') || 'llama-3.3-70b-versatile',
+        name: 'Groq',
+      })
     }
   }
 
@@ -243,13 +253,19 @@ export class TemplatesService implements OnModuleInit {
   }
 
   async generateCustom(description: string): Promise<GeneratedTemplate> {
-    if (!this.openai) {
-      throw new Error('Nenhuma LLM configurada. Defina GROQ_API_KEY, GEMINI_API_KEY ou OPENAI_API_KEY.')
+    if (this.providers.length === 0) {
+      throw new HttpException(
+        'Nenhuma LLM configurada. Defina GROQ_API_KEY, GEMINI_API_KEY ou OPENAI_API_KEY.',
+        HttpStatus.SERVICE_UNAVAILABLE,
+      )
     }
 
     const trimmed = description.trim()
     if (trimmed.length < 10) {
-      throw new Error('Descreva seu caso de uso com pelo menos algumas palavras (ex: "streamer divulgando agenda de lives e sorteios").')
+      throw new HttpException(
+        'Descreva seu caso de uso com pelo menos algumas palavras (ex: "streamer divulgando agenda de lives e sorteios").',
+        HttpStatus.BAD_REQUEST,
+      )
     }
 
     const systemPrompt = `Você é um especialista em montar configurações de assistentes virtuais (recepcionistas de IA) que atendem por WhatsApp e telefone.
@@ -280,33 +296,64 @@ ${trimmed}
 
 Gere a configuração completa em JSON.`
 
-    try {
-      const res = await this.openai.chat.completions.create({
-        model: this.model,
-        temperature: 0.7,
-        max_tokens: 1500,
-        response_format: { type: 'json_object' } as any,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
-      })
+    let lastError: string | null = null
 
-      const raw = res.choices[0]?.message?.content?.trim() || ''
-      const parsed = this.parseGenerated(raw)
-      return parsed
-    } catch (err: any) {
-      this.logger.error(`Custom template generation failed: ${err.message}`)
-      throw new Error('Não consegui gerar o template agora. Tente reformular a descrição ou tente de novo em instantes.')
+    for (const provider of this.providers) {
+      this.logger.log(`Trying provider: ${provider.name} (${provider.model})`)
+
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const res = await provider.client.chat.completions.create({
+            model: provider.model,
+            temperature: 0.7,
+            max_tokens: 1500,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userPrompt },
+            ],
+          } as any)
+
+          const raw = res.choices[0]?.message?.content?.trim() || ''
+          const parsed = this.parseGenerated(raw)
+          this.logger.log(`Template generated successfully via ${provider.name}`)
+          return parsed
+        } catch (err: any) {
+          const status = err.status || err.statusCode
+          const msg = err.message || ''
+
+          if (status === 429 && attempt < 1) {
+            const delay = (attempt + 1) * 2000
+            this.logger.warn(`${provider.name} rate limited, retrying in ${delay / 1000}s`)
+            await this.sleep(delay)
+            continue
+          }
+
+          lastError = `${provider.name}: ${msg}`
+          this.logger.warn(`${provider.name} failed: ${msg}`)
+          break // try next provider
+        }
+      }
     }
+
+    this.logger.error(`All providers failed. Last error: ${lastError}`)
+    throw new HttpException(
+      'Serviço de IA temporariamente sobrecarregado. Tente novamente em alguns instantes.',
+      HttpStatus.TOO_MANY_REQUESTS,
+    )
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms))
   }
 
   private parseGenerated(raw: string): GeneratedTemplate {
+    const sanitized = raw.replace(/[\x00-\x1F\x7F-\x9F]/g, '')
+
     let json: any
     try {
-      json = JSON.parse(raw)
+      json = JSON.parse(sanitized)
     } catch {
-      const match = raw.match(/\{[\s\S]*\}/)
+      const match = sanitized.match(/\{[\s\S]*\}/)
       if (!match) throw new Error('LLM retornou formato inválido')
       json = JSON.parse(match[0])
     }

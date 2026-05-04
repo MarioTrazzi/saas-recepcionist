@@ -15,19 +15,20 @@ export class AgentService {
   ) {
     const groqKey = configService.get('GROQ_API_KEY')
     const geminiKey = configService.get('GEMINI_API_KEY')
+    const openaiKey = configService.get('OPENAI_API_KEY')
 
-    if (groqKey) {
-      this.openai = new OpenAI({
-        apiKey: groqKey,
-        baseURL: 'https://api.groq.com/openai/v1',
-      })
+    if (openaiKey) {
+      this.openai = new OpenAI({ apiKey: openaiKey })
     } else if (geminiKey) {
       this.openai = new OpenAI({
         apiKey: geminiKey,
         baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/',
       })
-    } else {
-      this.openai = new OpenAI({ apiKey: configService.get('OPENAI_API_KEY') })
+    } else if (groqKey) {
+      this.openai = new OpenAI({
+        apiKey: groqKey,
+        baseURL: 'https://api.groq.com/openai/v1',
+      })
     }
   }
 
