@@ -300,7 +300,7 @@ export default function SettingsPage() {
                     href={tenant?.metaAppId ? `https://developers.facebook.com/apps/${tenant.metaAppId}/use_cases/` : 'https://developers.facebook.com/apps/'}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="ml-auto text-xs text-green-400 hover:text-green-300 flex items-center gap-1.5 transition-colors font-semibold px-2.5 py-1 rounded-full bg-green-500/10 border border-green-500/20"
+                    className="text-xs text-green-400 hover:text-green-300 flex items-center gap-1.5 transition-colors font-semibold px-2.5 py-1 rounded-full bg-green-500/10 border border-green-500/20"
                   >
                     <ExternalLink className="h-3 w-3" /> Abrir Painel da Meta
                   </a>
