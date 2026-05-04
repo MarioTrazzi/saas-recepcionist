@@ -1,33 +1,30 @@
 import { useQuery } from '@tanstack/react-query'
-import { useState } from 'react'
-import { Phone, MessageSquare, TrendingUp, Clock, Zap, AlertTriangle, ChevronRight, UserPlus, Flame, Lightbulb, Sparkles, Loader2 } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Phone, MessageSquare, TrendingUp, Clock, Zap, AlertTriangle, ChevronRight, UserPlus, Flame, Lightbulb, ChevronLeft } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { dashboardApi, agentApi } from '@/lib/api'
-import { getTipsForCategory, CATEGORY_LABELS, type AgentTip } from '@/lib/dashboard-tips'
 
 export default function DashboardPage() {
   const { data, isLoading } = useQuery({ queryKey: ['dashboard'], queryFn: dashboardApi.get, refetchInterval: 30_000 })
   const { data: agentConfig } = useQuery({ queryKey: ['agent-config'], queryFn: agentApi.getConfig, retry: false })
 
-  const [generatingTips, setGeneratingTips] = useState(false)
-  const [generatedTips, setGeneratedTips] = useState<string[]>([])
+  const tips: string[] = agentConfig?.tips ?? []
+  const [tipIndex, setTipIndex] = useState(0)
 
-  const templateCategory: string = agentConfig?.templateCategory || 'custom'
-  const staticTips: AgentTip[] = getTipsForCategory(templateCategory)
-  const isCustom = templateCategory === 'custom' || staticTips.length === 0
+  useEffect(() => {
+    if (tips.length <= 1) return
+    const id = setInterval(() => {
+      setTipIndex(cur => {
+        let next
+        do { next = Math.floor(Math.random() * tips.length) } while (next === cur && tips.length > 1)
+        return next
+      })
+    }, 3 * 60 * 1000)
+    return () => clearInterval(id)
+  }, [tips.length])
 
-  const handleGenerateTips = async () => {
-    if (!agentConfig?.systemPrompt) return
-    setGeneratingTips(true)
-    try {
-      const { tips } = await agentApi.generateTips(agentConfig.systemPrompt, agentConfig.agentName || '')
-      setGeneratedTips(tips)
-    } catch {
-      setGeneratedTips([])
-    } finally {
-      setGeneratingTips(false)
-    }
-  }
+  const goNext = () => setTipIndex(cur => (cur + 1) % tips.length)
+  const goPrev = () => setTipIndex(cur => (cur - 1 + tips.length) % tips.length)
 
   if (isLoading) {
     return (
@@ -227,83 +224,55 @@ export default function DashboardPage() {
       </div>
 
       {/* Agent tips */}
-      {agentReady && (
+      {agentReady && tips.length > 0 && (
         <div className="card p-5 mb-8">
-          <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-white flex items-center gap-2">
               <Lightbulb className="h-4 w-4 text-yellow-400" />
               Como aprimorar seu agente
             </h2>
-            <span className="text-xs text-gray-500">
-              {CATEGORY_LABELS[templateCategory] ?? 'Agente'}
-            </span>
+            <span className="text-xs text-gray-600">{tipIndex + 1} / {tips.length}</span>
           </div>
-          <p className="text-xs text-gray-500 mb-5">
-            Adicione essas informações à base de conhecimento para que seu agente responda com mais precisão.
-          </p>
 
-          {/* Static tips grid */}
-          {!isCustom && (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {staticTips.map((tip, i) => (
-                <TipCard key={i} tip={tip} />
-              ))}
+          <div className="flex items-center gap-3">
+            {tips.length > 1 && (
+              <button
+                onClick={goPrev}
+                className="flex-shrink-0 h-8 w-8 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors"
+              >
+                <ChevronLeft className="h-4 w-4 text-gray-400" />
+              </button>
+            )}
+
+            <div className="flex-1 rounded-xl border border-yellow-500/15 bg-yellow-500/5 p-4">
+              <p className="text-sm text-gray-200 leading-relaxed">{tips[tipIndex]}</p>
+              <Link
+                to="/app/knowledge"
+                className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-yellow-400 hover:text-yellow-300 transition-colors"
+              >
+                Adicionar à base de conhecimento <ChevronRight className="h-3 w-3" />
+              </Link>
             </div>
-          )}
 
-          {/* Custom template — AI-generated tips */}
-          {isCustom && (
-            <div className="space-y-3">
-              {generatedTips.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-gray-700 p-5 text-center">
-                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
-                    <Sparkles className="h-5 w-5 text-primary" />
-                  </div>
-                  <p className="text-sm font-medium text-gray-300 mb-1">Dicas personalizadas para o seu agente</p>
-                  <p className="text-xs text-gray-500 mb-4 leading-relaxed">
-                    Com base nas instruções do seu agente, nossa IA gera sugestões específicas para o seu negócio.
-                  </p>
-                  <button
-                    onClick={handleGenerateTips}
-                    disabled={generatingTips || !agentConfig?.systemPrompt}
-                    className="btn-primary text-sm flex items-center gap-2 mx-auto disabled:opacity-50"
-                  >
-                    {generatingTips
-                      ? <><Loader2 className="h-4 w-4 animate-spin" /> Gerando dicas…</>
-                      : <><Sparkles className="h-4 w-4" /> Gerar dicas personalizadas</>
-                    }
-                  </button>
-                  {!agentConfig?.systemPrompt && (
-                    <p className="text-xs text-gray-600 mt-2">Configure as instruções do agente em Configurações para gerar dicas.</p>
-                  )}
-                </div>
-              ) : (
-                <>
-                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {generatedTips.map((tip, i) => (
-                      <div key={i} className="rounded-xl border border-gray-700 bg-gray-800/50 p-4">
-                        <div className="flex items-start gap-2">
-                          <span className="text-lg flex-shrink-0 mt-0.5">✨</span>
-                          <p className="text-xs text-gray-300 leading-relaxed">{tip}</p>
-                        </div>
-                        <Link
-                          to="/app/knowledge"
-                          className="mt-3 flex items-center gap-1 text-[11px] font-medium text-primary hover:text-primary/80 transition-colors"
-                        >
-                          Adicionar à base <ChevronRight className="h-3 w-3" />
-                        </Link>
-                      </div>
-                    ))}
-                  </div>
-                  <button
-                    onClick={handleGenerateTips}
-                    disabled={generatingTips}
-                    className="text-xs text-gray-500 hover:text-gray-300 transition-colors flex items-center gap-1"
-                  >
-                    <Sparkles className="h-3 w-3" /> Gerar novas dicas
-                  </button>
-                </>
-              )}
+            {tips.length > 1 && (
+              <button
+                onClick={goNext}
+                className="flex-shrink-0 h-8 w-8 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors"
+              >
+                <ChevronRight className="h-4 w-4 text-gray-400" />
+              </button>
+            )}
+          </div>
+
+          {tips.length > 1 && (
+            <div className="flex justify-center gap-1.5 mt-4">
+              {tips.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setTipIndex(i)}
+                  className={`h-1.5 rounded-full transition-all ${i === tipIndex ? 'w-4 bg-yellow-400' : 'w-1.5 bg-gray-700 hover:bg-gray-600'}`}
+                />
+              ))}
             </div>
           )}
         </div>
@@ -464,25 +433,6 @@ function formatPhone(raw: string): string {
   return raw
 }
 
-function TipCard({ tip }: { tip: AgentTip }) {
-  return (
-    <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-4 flex flex-col">
-      <div className="flex items-start gap-2 flex-1">
-        <span className="text-lg flex-shrink-0 mt-0.5">{tip.icon}</span>
-        <div>
-          <p className="text-xs font-semibold text-gray-200 mb-1">{tip.title}</p>
-          <p className="text-xs text-gray-400 leading-relaxed">{tip.description}</p>
-        </div>
-      </div>
-      <Link
-        to="/app/knowledge"
-        className="mt-3 flex items-center gap-1 text-[11px] font-medium text-primary hover:text-primary/80 transition-colors"
-      >
-        Adicionar à base <ChevronRight className="h-3 w-3" />
-      </Link>
-    </div>
-  )
-}
 
 function StatCard({ icon: Icon, label, value, color }: { icon: any; label: string; value: any; color: string }) {
   const colors: Record<string, string> = {

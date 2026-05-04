@@ -66,6 +66,9 @@ export class AgentConfig {
   @Column({ nullable: true })
   templateCategory: string
 
+  @Column({ type: 'jsonb', nullable: true })
+  tips: string[]
+
   @Column({ type: 'boolean', default: true })
   isActive: boolean
 

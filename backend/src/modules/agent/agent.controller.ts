@@ -21,7 +21,9 @@ export class AgentController {
   }
 
   @Post('tips')
-  generateTips(@Request() req, @Body() body: { systemPrompt: string; agentName: string }) {
-    return this.svc.generateTips(body.systemPrompt || '', body.agentName || '').then(tips => ({ tips }))
+  generateTips(@Request() req, @Body() body: { systemPrompt: string; agentName: string; templateCategory?: string }) {
+    return this.svc
+      .generateTips(req.user.tenantId, body.systemPrompt || '', body.agentName || '', body.templateCategory)
+      .then(tips => ({ tips }))
   }
 }

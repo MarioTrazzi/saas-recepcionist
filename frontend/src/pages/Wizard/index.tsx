@@ -161,6 +161,9 @@ export default function WizardPage() {
         }
       }
 
+      // Generate and persist tips — fire and forget, don't block navigation
+      agentApi.generateTips(data.systemPrompt, data.agentName || '', data.templateCategory || 'custom').catch(() => {})
+
       localStorage.removeItem(DRAFT_KEY)
       navigate('/app/dashboard')
     } finally {

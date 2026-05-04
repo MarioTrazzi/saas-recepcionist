@@ -95,7 +95,7 @@ export class AgentService {
     return prompt
   }
 
-  async generateTips(systemPrompt: string, agentName: string): Promise<string[]> {
+  async generateTips(tenantId: string, systemPrompt: string, agentName: string, templateCategory?: string): Promise<string[]> {
     if (!this.openai) return []
 
     const model = this.configService.get('GEMINI_API_KEY')
@@ -104,31 +104,43 @@ export class AgentService {
       ? (this.configService.get('GROQ_MODEL') || 'llama-3.3-70b-versatile')
       : (this.configService.get('OPENAI_MODEL') || 'gpt-4o-mini')
 
+    const categoryHint = templateCategory && templateCategory !== 'custom'
+      ? `O agente é para um negócio do segmento: ${templateCategory}.`
+      : ''
+
     try {
       const res = await this.openai.chat.completions.create({
         model,
-        temperature: 0.5,
-        max_tokens: 600,
+        temperature: 0.6,
+        max_tokens: 800,
         messages: [
           {
             role: 'system',
             content: `Você é um especialista em otimização de agentes de atendimento por IA.
-Analise as instruções do agente abaixo e gere exatamente 5 dicas práticas e específicas para melhorar o atendimento.
-Cada dica deve indicar algo concreto que o usuário pode adicionar à base de conhecimento do agente para ele responder melhor.
-Responda SOMENTE com um array JSON de 5 strings, sem markdown, sem explicações. Exemplo:
-["Dica 1", "Dica 2", "Dica 3", "Dica 4", "Dica 5"]`,
+${categoryHint}
+Analise as instruções do agente e gere exatamente 6 dicas práticas e específicas para melhorar o atendimento.
+Cada dica deve indicar algo concreto que o operador pode adicionar à base de conhecimento para o agente responder melhor.
+Seja específico para o segmento e o contexto do agente — evite dicas genéricas.
+Responda SOMENTE com um array JSON de 6 strings em português, sem markdown, sem explicações adicionais.
+Exemplo: ["Adicione os horários de funcionamento...", "Inclua a tabela de preços..."]`,
           },
           {
             role: 'user',
-            content: `Nome do agente: ${agentName}\n\nInstruções:\n${systemPrompt}`,
+            content: `Nome do agente: ${agentName}\n\nInstruções do agente:\n${systemPrompt || 'Não informado'}`,
           },
         ],
       })
 
       const raw = res.choices[0]?.message?.content?.trim() || '[]'
-      const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed)) return parsed.slice(0, 5).filter(t => typeof t === 'string')
-      return []
+      const match = raw.match(/\[[\s\S]*\]/)
+      const parsed = JSON.parse(match ? match[0] : raw)
+      const tips = Array.isArray(parsed) ? parsed.slice(0, 6).filter(t => typeof t === 'string') : []
+
+      if (tips.length > 0) {
+        await this.configRepo.update({ tenantId }, { tips })
+      }
+
+      return tips
     } catch {
       return []
     }

@@ -38,8 +38,8 @@ export const tenantApi = {
 export const agentApi = {
   getConfig: () => api.get('/agent/config').then(r => r.data),
   upsertConfig: (data: any) => api.put('/agent/config', data).then(r => r.data),
-  generateTips: (systemPrompt: string, agentName: string) =>
-    api.post('/agent/tips', { systemPrompt, agentName }).then(r => r.data as { tips: string[] }),
+  generateTips: (systemPrompt: string, agentName: string, templateCategory?: string) =>
+    api.post('/agent/tips', { systemPrompt, agentName, templateCategory }).then(r => r.data as { tips: string[] }),
 }
 
 export const phoneApi = {
