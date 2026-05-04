@@ -306,7 +306,7 @@ export default function SettingsPage() {
                   </a>
                 </div>
                 <p className="text-xs text-gray-500">
-                  Navegue em: <strong className="text-gray-300">Selecione o App → Casos de uso → WhatsApp (botão "Customize") → Configurações → Webhooks</strong>. Use estes valores:
+                  Navegue em: <strong className="text-gray-300">Selecione o App → Casos de Utilização → WhatsApp (botão "Customize") → Configurações → Webhooks</strong>. Use estes valores:
                 </p>
                 <div className="space-y-2">
                   <div className="rounded-lg bg-gray-900 border border-gray-700 px-3 py-2">

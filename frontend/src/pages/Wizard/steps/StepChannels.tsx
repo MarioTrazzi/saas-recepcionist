@@ -475,7 +475,7 @@ export function StepChannels({ data, update, onNext, onBack }: Props) {
                     <p className="text-gray-200 font-medium mb-2">Configure o webhook no Meta</p>
                     <p className="text-xs mb-2">No painel do Meta Developers:</p>
                     <ol className="text-xs space-y-1.5 mb-3 list-decimal list-inside">
-                      <li>Navegue em <strong className="text-gray-200">Selecione o App → Casos de uso → WhatsApp (botão "Customize") → Configurações → Webhooks</strong></li>
+                      <li>Navegue em <strong className="text-gray-200">Selecione o App → Casos de Utilização → WhatsApp (botão "Customize") → Configurações → Webhooks</strong></li>
                       <li>Clique em <strong className="text-gray-200">Assinar webhook</strong> (ou "Configure a webhook")</li>
                       <li>Cole a URL e o token abaixo</li>
                       <li>Confirme — o Meta vai testar a conexão</li>
