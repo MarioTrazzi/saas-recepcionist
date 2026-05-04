@@ -1,6 +1,7 @@
 import { useConversation } from '@11labs/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Mic, PhoneOff, Loader2 } from 'lucide-react'
+import { phoneApi } from '@/lib/api'
 
 interface Props {
   agentId: string
@@ -8,6 +9,7 @@ interface Props {
 
 export default function ConvaiTestWidget({ agentId }: Props) {
   const [error, setError] = useState('')
+  const [fetchingToken, setFetchingToken] = useState(false)
   const animFrameRef = useRef<number>()
   const orbRef = useRef<HTMLDivElement>(null)
   const ring1Ref = useRef<HTMLDivElement>(null)
@@ -23,14 +25,13 @@ export default function ConvaiTestWidget({ agentId }: Props) {
 
   const statusStr = status as string
   const isIdle = statusStr === 'idle'
-  const isConnecting = statusStr === 'connecting'
+  const isConnecting = statusStr === 'connecting' || fetchingToken
   const isConnected = statusStr === 'connected'
 
   // ── Audio visualization loop ───────────────────────────────────────────
   useEffect(() => {
     if (!isConnected) {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current)
-      // Reset rings
       ;[ring1Ref, ring2Ref, ring3Ref].forEach(r => {
         if (r.current) { r.current.style.transform = 'scale(1)'; r.current.style.opacity = '0.15' }
       })
@@ -40,7 +41,7 @@ export default function ConvaiTestWidget({ agentId }: Props) {
 
     const tick = () => {
       const vol = isSpeaking ? getOutputVolume() : getInputVolume()
-      const smooth = Math.min(vol * 2.5, 1) // amplify a bit
+      const smooth = Math.min(vol * 2.5, 1)
 
       if (orbRef.current) {
         orbRef.current.style.transform = `scale(${1 + smooth * 0.08})`
@@ -67,32 +68,34 @@ export default function ConvaiTestWidget({ agentId }: Props) {
 
   const handleStart = useCallback(async () => {
     setError('')
+    setFetchingToken(true)
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true })
-      await startSession({ agentId })
+      const { signedUrl } = await phoneApi.getConversationToken()
+      await startSession({ signedUrl })
     } catch (e: any) {
       if (e.name === 'NotAllowedError') {
         setError('Permissão de microfone negada. Libere o acesso nas configurações do navegador.')
       } else {
-        setError(e.message || 'Não foi possível iniciar a conversa.')
+        setError(e?.response?.data?.message || e.message || 'Não foi possível iniciar a conversa.')
       }
+    } finally {
+      setFetchingToken(false)
     }
-  }, [agentId, startSession])
+  }, [startSession])
 
   const handleStop = useCallback(async () => {
     await endSession()
   }, [endSession])
 
-  // ── Status label ──────────────────────────────────────────────────────
   const statusLabel = isConnecting
     ? 'Conectando…'
     : isConnected
     ? isSpeaking
-      ? 'Sofia está falando…'
+      ? 'Agente está falando…'
       : 'Ouvindo você…'
     : 'Clique para testar'
 
-  // ── Orb color ─────────────────────────────────────────────────────────
   const orbColor = isConnected
     ? isSpeaking
       ? 'bg-primary shadow-[0_0_32px_rgba(139,92,246,0.6)]'
@@ -106,35 +109,17 @@ export default function ConvaiTestWidget({ agentId }: Props) {
   return (
     <div className="flex flex-col items-center gap-5 py-6 select-none">
 
-      {/* Orb + rings */}
       <div className="relative flex items-center justify-center w-36 h-36">
+        <div ref={ring3Ref} className={`absolute inset-0 rounded-full border-2 ${ringColor} transition-none`} style={{ opacity: 0.08 }} />
+        <div ref={ring2Ref} className={`absolute inset-4 rounded-full border-2 ${ringColor} transition-none`} style={{ opacity: 0.15 }} />
+        <div ref={ring1Ref} className={`absolute inset-8 rounded-full border-2 ${ringColor} transition-none`} style={{ opacity: 0.25 }} />
 
-        {/* Ring 3 — outermost */}
-        <div
-          ref={ring3Ref}
-          className={`absolute inset-0 rounded-full border-2 ${ringColor} transition-none`}
-          style={{ opacity: 0.08 }}
-        />
-        {/* Ring 2 */}
-        <div
-          ref={ring2Ref}
-          className={`absolute inset-4 rounded-full border-2 ${ringColor} transition-none`}
-          style={{ opacity: 0.15 }}
-        />
-        {/* Ring 1 — closest */}
-        <div
-          ref={ring1Ref}
-          className={`absolute inset-8 rounded-full border-2 ${ringColor} transition-none`}
-          style={{ opacity: 0.25 }}
-        />
-
-        {/* Main orb / button */}
         <div
           ref={orbRef}
           onClick={isIdle ? handleStart : undefined}
           className={`
             relative z-10 h-16 w-16 rounded-full flex items-center justify-center
-            transition-colors duration-300 cursor-pointer
+            transition-colors duration-300
             ${orbColor}
             ${isIdle ? 'cursor-pointer' : 'cursor-default'}
           `}
@@ -156,7 +141,6 @@ export default function ConvaiTestWidget({ agentId }: Props) {
         </div>
       </div>
 
-      {/* Status */}
       <div className="text-center space-y-1">
         <p className={`text-sm font-medium transition-colors ${
           isConnected
@@ -175,7 +159,6 @@ export default function ConvaiTestWidget({ agentId }: Props) {
         )}
       </div>
 
-      {/* Error */}
       {error && (
         <p className="text-xs text-red-400 text-center max-w-xs">{error}</p>
       )}

@@ -51,6 +51,7 @@ export const phoneApi = {
   updateElevenLabsAgent: (data: { name?: string; prompt?: string; firstMessage?: string; language?: string; voiceId?: string }) =>
     api.patch('/phone/elevenlabs-agent', data).then(r => r.data),
   listElevenLabsVoices: () => api.get('/phone/elevenlabs-voices').then(r => r.data),
+  getConversationToken: () => api.get('/phone/elevenlabs-conversation-token').then(r => r.data as { signedUrl: string }),
 }
 
 export const whatsappApi = {

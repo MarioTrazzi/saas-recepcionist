@@ -83,6 +83,15 @@ export class PhoneController {
     return this.svc.updateElevenLabsAgent(req.user.tenantId, body)
   }
 
+  // Authenticated — get a short-lived signed URL for a browser-side conversation
+  @Get('elevenlabs-conversation-token')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async getConversationToken(@Request() req) {
+    const signedUrl = await this.svc.getConversationSignedUrl(req.user.tenantId)
+    return { signedUrl }
+  }
+
   // Authenticated — list ElevenLabs voices for this account
   @Get('elevenlabs-voices')
   @UseGuards(JwtAuthGuard)

@@ -273,7 +273,7 @@ export class PhoneService {
       language: cfg.agent?.language || 'pt-br',
       voiceId: cfg.tts?.voice_id,
       modelId: cfg.tts?.model_id,
-      expressiveMode: cfg.tts?.expressive_mode ?? false,
+      expressiveMode: cfg.tts?.expressive_mode ?? tenant.elevenLabsExpressiveMode ?? false,
       interruptible: !(cfg.agent?.disable_first_message_interruptions ?? false),
       llm: cfg.agent?.prompt?.llm || 'gemini-2.0-flash',
     }
@@ -321,12 +321,27 @@ export class PhoneService {
       { headers: { 'xi-api-key': apiKey } },
     )
 
-    if (dto.voiceId) {
-      await this.tenantsService.update(tenantId, { elevenLabsVoiceId: dto.voiceId })
+    const tenantUpdate: Partial<Record<string, any>> = {}
+    if (dto.voiceId) tenantUpdate.elevenLabsVoiceId = dto.voiceId
+    if (dto.expressiveMode !== undefined) tenantUpdate.elevenLabsExpressiveMode = dto.expressiveMode
+    if (Object.keys(tenantUpdate).length > 0) {
+      await this.tenantsService.update(tenantId, tenantUpdate)
     }
 
     this.logger.log(`[${tenantId}] ElevenLabs agent updated`)
     return { ok: true }
+  }
+
+  async getConversationSignedUrl(tenantId: string): Promise<string> {
+    const tenant = await this.tenantsService.findById(tenantId)
+    if (!tenant.elevenLabsAgentId) throw new NotFoundException('Agente ElevenLabs não criado')
+    const apiKey = this.config.get('ELEVENLABS_API_KEY')
+    const { data } = await axios.post(
+      `https://api.elevenlabs.io/v1/convai/conversation/get_signed_url?agent_id=${tenant.elevenLabsAgentId}`,
+      {},
+      { headers: { 'xi-api-key': apiKey } },
+    )
+    return data.signed_url as string
   }
 
   async listElevenLabsVoices() {

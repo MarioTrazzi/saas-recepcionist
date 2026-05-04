@@ -57,6 +57,9 @@ export class Tenant {
   @Column({ nullable: true })
   elevenLabsAgentId: string
 
+  @Column({ type: 'boolean', default: false })
+  elevenLabsExpressiveMode: boolean
+
   @Column({ nullable: true })
   whatsappInstanceName: string
 
