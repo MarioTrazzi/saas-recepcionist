@@ -46,6 +46,17 @@ export class WhatsappController {
     return { ok: true }
   }
 
+  // ── Authenticated: Embedded Signup — exchange Meta code for WA credentials ──
+  @Post('embedded-signup')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async embeddedSignup(
+    @Request() req,
+    @Body() body: { code: string; redirectUri: string },
+  ) {
+    return this.svc.embeddedSignup(req.user.tenantId, body.code, body.redirectUri)
+  }
+
   // ── Authenticated: configure Cloud API credentials ────────────────────────
   @Post('setup-cloudapi')
   @UseGuards(JwtAuthGuard)

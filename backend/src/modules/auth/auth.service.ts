@@ -1,9 +1,10 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common'
+import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { ConfigService } from '@nestjs/config'
 import { TenantsService } from '../tenants/tenants.service'
 import { google } from 'googleapis'
 import * as bcrypt from 'bcrypt'
+import axios from 'axios'
 
 @Injectable()
 export class AuthService {
@@ -94,5 +95,75 @@ export class AuthService {
 
     const token = this.jwtService.sign({ sub: user.id, tenantId: user.tenantId, email: user.email, name: user.name, role: user.role })
     return { token, user: { id: user.id, name: user.name, email: user.email, role: user.role, tenantId: user.tenantId } }
+  }
+
+  async handleMetaCallback(code: string, redirectUri: string): Promise<{ token: string; isNew: boolean; whatsappConfigured: boolean }> {
+    const appId = this.config.get('META_APP_ID')
+    const appSecret = this.config.get('META_APP_SECRET')
+
+    // Exchange code for access token
+    const tokenRes = await axios.get('https://graph.facebook.com/v20.0/oauth/access_token', {
+      params: { client_id: appId, client_secret: appSecret, redirect_uri: redirectUri, code },
+    })
+    const accessToken: string = tokenRes.data.access_token
+
+    // Get user profile
+    const profileRes = await axios.get('https://graph.facebook.com/me', {
+      params: { fields: 'id,name,email', access_token: accessToken },
+    })
+    const { name, email } = profileRes.data
+
+    if (!email) throw new BadRequestException('Conta Meta sem email. Adicione um email à sua conta do Facebook.')
+
+    let user = await this.tenantsService.getUserByEmail(email)
+    let isNew = false
+
+    if (!user) {
+      const { tenant, user: newUser } = await this.tenantsService.createTenantWithOwner({
+        tenantName: name,
+        email,
+        password: Math.random().toString(36),
+        ownerName: name,
+      })
+      user = { ...newUser, tenantId: tenant.id } as any
+      isNew = true
+    }
+
+    // Try to auto-configure WhatsApp Business from this token
+    let whatsappConfigured = false
+    try {
+      const waRes = await axios.get('https://graph.facebook.com/v20.0/me/whatsapp_business_accounts', {
+        params: { access_token: accessToken },
+      })
+      const waAccounts: any[] = waRes.data.data || []
+      if (waAccounts.length > 0) {
+        const phonesRes = await axios.get(`https://graph.facebook.com/v20.0/${waAccounts[0].id}/phone_numbers`, {
+          params: { fields: 'id,display_phone_number', access_token: accessToken },
+        })
+        const phones: any[] = phonesRes.data.data || []
+        if (phones.length > 0) {
+          await this.tenantsService.update(user.tenantId, {
+            metaPhoneNumberId: phones[0].id,
+            metaAccessToken: accessToken,
+            whatsappPhoneNumber: phones[0].display_phone_number,
+            whatsappChannelEnabled: true,
+            whatsappInstanceName: null,
+          })
+          whatsappConfigured = true
+        }
+      }
+    } catch {
+      // WhatsApp not available from this token — user can configure later in wizard
+    }
+
+    const token = this.jwtService.sign({
+      sub: user.id,
+      tenantId: user.tenantId,
+      email: user.email,
+      name: user.name || name,
+      role: user.role,
+    })
+
+    return { token, isNew, whatsappConfigured }
   }
 }

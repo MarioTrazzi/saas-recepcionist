@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { Phone } from 'lucide-react'
+import { Phone, Loader2 } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
+import { authApi } from '@/lib/api'
+import { facebookEmbeddedSignup } from '@/lib/facebook'
 
 function GoogleIcon() {
   return (
@@ -14,12 +16,22 @@ function GoogleIcon() {
   )
 }
 
+function MetaIcon() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none">
+      <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z" fill="#1877F2"/>
+      <path d="M13.25 15.5h-2.5v-5.25H9.5V8.5h1.25V7.75C10.75 6.23 11.61 5.5 13 5.5c.62 0 1.25.06 1.25.06v1.44h-.7c-.69 0-.8.33-.8.81V8.5h1.44l-.19 1.75H12.75V15.5z" fill="white"/>
+    </svg>
+  )
+}
+
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const { login } = useAuthStore()
+  const [metaLoading, setMetaLoading] = useState(false)
+  const { login, setToken } = useAuthStore()
   const navigate = useNavigate()
   const [params] = useSearchParams()
 
@@ -39,6 +51,22 @@ export default function LoginPage() {
     }
   }
 
+  const handleMetaLogin = async () => {
+    setError('')
+    setMetaLoading(true)
+    try {
+      const result = await facebookEmbeddedSignup()
+      if (!result) return // user cancelled popup
+      const { token, isNew } = await authApi.metaCallback(result.code, window.location.origin)
+      setToken(token)
+      navigate(isNew ? '/wizard' : '/app/dashboard', { replace: true })
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Falha ao autenticar com Meta. Tente novamente.')
+    } finally {
+      setMetaLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
@@ -49,6 +77,21 @@ export default function LoginPage() {
           <h1 className="text-2xl font-bold text-white">Entrar</h1>
           <p className="text-gray-400 text-sm mt-1">Acesse seu painel</p>
         </div>
+
+        {/* Meta login — recommended (WhatsApp auto-configured) */}
+        <button
+          type="button"
+          onClick={handleMetaLogin}
+          disabled={metaLoading}
+          className="relative flex items-center justify-center gap-3 w-full border border-blue-500/60 rounded-xl px-4 py-2.5 text-sm font-medium text-white bg-[#1877F2] hover:bg-[#166FE5] transition-colors mb-2 disabled:opacity-70"
+        >
+          {metaLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <MetaIcon />}
+          Entrar com Meta
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold bg-white/20 px-1.5 py-0.5 rounded text-white/90">
+            RECOMENDADO
+          </span>
+        </button>
+        <p className="text-center text-xs text-gray-500 mb-3">WhatsApp Business configurado automaticamente</p>
 
         {/* Google login */}
         <a

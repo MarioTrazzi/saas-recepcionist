@@ -3,10 +3,11 @@ import { useQuery } from '@tanstack/react-query'
 import {
   ChevronRight, ChevronLeft, Phone, MessageSquare, CheckCircle,
   AlertCircle, Loader2, ExternalLink, Copy, Check, KeyRound,
-  Shield, Zap, Star, Search, Sparkles,
+  Shield, Zap, Star, Search, Sparkles, ChevronDown,
 } from 'lucide-react'
 import { WizardData } from '../index'
 import { whatsappApi, phoneApi } from '@/lib/api'
+import { facebookEmbeddedSignup } from '@/lib/facebook'
 
 interface Props {
   data: WizardData
@@ -231,6 +232,9 @@ function CopyButton({ text }: { text: string }) {
 export function StepChannels({ data, update, onNext, onBack, onOpenSupport }: Props) {
   const [verifying, setVerifying] = useState(false)
   const [verifyError, setVerifyError] = useState('')
+  const [embeddedLoading, setEmbeddedLoading] = useState(false)
+  const [embeddedError, setEmbeddedError] = useState('')
+  const [showManual, setShowManual] = useState(false)
   const [evolutionVerifying, setEvolutionVerifying] = useState(false)
   const [evolutionVerifyError, setEvolutionVerifyError] = useState('')
   const [evolutionQrCode, setEvolutionQrCode] = useState('')
@@ -305,6 +309,21 @@ export function StepChannels({ data, update, onNext, onBack, onOpenSupport }: Pr
   const selectedOption = data.phoneNumberSid
     ? allOptions().find(n => n.sid === data.phoneNumberSid)
     : undefined
+
+  const handleEmbeddedSignup = async () => {
+    setEmbeddedError('')
+    setEmbeddedLoading(true)
+    try {
+      const result = await facebookEmbeddedSignup()
+      if (!result) return // user cancelled
+      const { phoneNumber } = await whatsappApi.embeddedSignup(result.code, window.location.origin)
+      update({ whatsappVerified: true, whatsappEnabled: true, whatsappPhoneNumber: phoneNumber } as any)
+    } catch (e: any) {
+      setEmbeddedError(e?.response?.data?.message || 'Não foi possível conectar. Tente novamente.')
+    } finally {
+      setEmbeddedLoading(false)
+    }
+  }
 
   const handleVerify = async () => {
     if (!data.metaPhoneNumberId || !data.metaAccessToken) return
@@ -543,107 +562,120 @@ export function StepChannels({ data, update, onNext, onBack, onOpenSupport }: Pr
           </div>
         </button>
 
-        {/* ── WhatsApp Cloud API setup ── */}
+        {/* ── WhatsApp setup ── */}
         {data.whatsappEnabled && !data.whatsappVerified && (
           <div className="pl-2 space-y-3">
 
-            {/* Setup card */}
-            <div className="card p-5 space-y-5">
+            {/* Embedded Signup — primary path */}
+            <div className="card p-5 space-y-4">
               <div className="flex items-center gap-2">
-                <KeyRound className="h-4 w-4 text-green-400" />
-                <p className="text-sm font-semibold text-white">Configure sua conta no Meta Developers</p>
+                <div className="h-8 w-8 rounded-lg bg-[#1877F2]/20 flex items-center justify-center flex-shrink-0">
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z" fill="#1877F2"/>
+                    <path d="M13.25 15.5h-2.5v-5.25H9.5V8.5h1.25V7.75C10.75 6.23 11.61 5.5 13 5.5c.62 0 1.25.06 1.25.06v1.44h-.7c-.69 0-.8.33-.8.81V8.5h1.44l-.19 1.75H12.75V15.5z" fill="white"/>
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-white">Conectar com Meta</p>
+                  <p className="text-xs text-gray-400">Sua conta Business é detectada automaticamente</p>
+                </div>
               </div>
 
-              {/* 1. Create app */}
-              <div>
-                <p className="text-xs text-gray-500 mb-1.5">1. Crie um app no Meta Developers</p>
-                <a
-                  href="https://developers.facebook.com/apps/creation/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-xs text-green-400 hover:text-green-300 transition-colors"
-                  onClick={e => e.stopPropagation()}
-                >
-                  <ExternalLink className="h-3.5 w-3.5" /> Criar app → Tipo Empresa → Adicionar produto WhatsApp
-                </a>
-              </div>
+              {embeddedError && (
+                <div className="flex items-start gap-2 text-xs text-red-400">
+                  <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
+                  {embeddedError}
+                </div>
+              )}
 
-              {/* 2. Webhook */}
-              <div>
-                <p className="text-xs text-gray-500 mb-2">2. Configure o webhook com os dados abaixo</p>
-                <div className="space-y-2">
-                  <div className="rounded-lg bg-gray-900 border border-gray-700 px-3 py-2">
-                    <p className="text-[10px] text-gray-500 mb-1">URL do webhook</p>
-                    <div className="flex items-center gap-2">
-                      <code className="text-xs text-green-300 flex-1 break-all">{webhookUrl}</code>
-                      <CopyButton text={webhookUrl} />
+              <button
+                type="button"
+                onClick={handleEmbeddedSignup}
+                disabled={embeddedLoading}
+                className="w-full flex items-center justify-center gap-2 text-sm font-medium text-white bg-[#1877F2] hover:bg-[#166FE5] px-4 py-2.5 rounded-xl transition-colors disabled:opacity-60"
+              >
+                {embeddedLoading
+                  ? <><Loader2 className="h-4 w-4 animate-spin" /> Conectando…</>
+                  : <><CheckCircle className="h-4 w-4" /> Conectar conta Meta</>
+                }
+              </button>
+            </div>
+
+            {/* Manual fallback — collapsible */}
+            <div>
+              <button
+                type="button"
+                onClick={() => setShowManual(s => !s)}
+                className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-300 transition-colors"
+              >
+                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showManual ? 'rotate-180' : ''}`} />
+                Configurar manualmente (Phone Number ID + Token)
+              </button>
+
+              {showManual && (
+                <div className="mt-3 card p-5 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <KeyRound className="h-4 w-4 text-green-400" />
+                    <p className="text-sm font-semibold text-white">Credenciais manuais</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-xs text-gray-500 mb-1">URL e token do webhook</p>
+                    <div className="rounded-lg bg-gray-900 border border-gray-700 px-3 py-2">
+                      <p className="text-[10px] text-gray-500 mb-1">URL do webhook</p>
+                      <div className="flex items-center gap-2">
+                        <code className="text-xs text-green-300 flex-1 break-all">{webhookUrl}</code>
+                        <CopyButton text={webhookUrl} />
+                      </div>
+                    </div>
+                    <div className="rounded-lg bg-gray-900 border border-gray-700 px-3 py-2">
+                      <p className="text-[10px] text-gray-500 mb-1">Token de verificação</p>
+                      <div className="flex items-center gap-2">
+                        <code className="text-xs text-green-300 flex-1">{verifyToken}</code>
+                        <CopyButton text={verifyToken} />
+                      </div>
                     </div>
                   </div>
-                  <div className="rounded-lg bg-gray-900 border border-gray-700 px-3 py-2">
-                    <p className="text-[10px] text-gray-500 mb-1">Token de verificação</p>
-                    <div className="flex items-center gap-2">
-                      <code className="text-xs text-green-300 flex-1">{verifyToken}</code>
-                      <CopyButton text={verifyToken} />
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => navigator.clipboard.writeText(`URL: ${webhookUrl}\nToken: ${verifyToken}`)}
-                    className="w-full flex items-center justify-center gap-2 text-xs font-medium text-green-400 bg-green-500/10 hover:bg-green-500/20 border border-green-500/25 rounded-lg px-3 py-2 transition-colors"
-                  >
-                    <Copy className="h-3.5 w-3.5" /> Copiar tudo (URL + Token)
-                  </button>
-                </div>
-              </div>
 
-              {/* 3. Credentials */}
-              <div className="space-y-3">
-                <p className="text-xs text-gray-500">3. Cole suas credenciais e verifique</p>
-                <div>
-                  <label className="text-xs text-gray-400 block mb-1">Meta App ID (opcional)</label>
-                  <input
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 font-mono placeholder-gray-600 focus:border-green-500 focus:ring-1 focus:ring-green-500/30 outline-none"
-                    placeholder="1456857732642595"
-                    value={data.metaAppId}
-                    onChange={e => update({ metaAppId: e.target.value.trim(), whatsappVerified: false })}
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-400 block mb-1">Phone Number ID</label>
-                  <input
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 font-mono placeholder-gray-600 focus:border-green-500 focus:ring-1 focus:ring-green-500/30 outline-none"
-                    placeholder="1234567890123456"
-                    value={data.metaPhoneNumberId}
-                    onChange={e => update({ metaPhoneNumberId: e.target.value.trim(), whatsappVerified: false })}
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-400 block mb-1">Access Token</label>
-                  <input
-                    type="password"
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 font-mono placeholder-gray-600 focus:border-green-500 focus:ring-1 focus:ring-green-500/30 outline-none"
-                    placeholder="EAAxxxxxxxxxxxxxxx"
-                    value={data.metaAccessToken}
-                    onChange={e => update({ metaAccessToken: e.target.value.trim(), whatsappVerified: false })}
-                  />
-                </div>
-                {verifyError && (
-                  <div className="flex items-start gap-2 text-xs text-red-400">
-                    <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
-                    {verifyError}
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs text-gray-400 block mb-1">Phone Number ID</label>
+                      <input
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 font-mono placeholder-gray-600 focus:border-green-500 focus:ring-1 focus:ring-green-500/30 outline-none"
+                        placeholder="1234567890123456"
+                        value={data.metaPhoneNumberId}
+                        onChange={e => update({ metaPhoneNumberId: e.target.value.trim(), whatsappVerified: false })}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-400 block mb-1">Access Token</label>
+                      <input
+                        type="password"
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 font-mono placeholder-gray-600 focus:border-green-500 focus:ring-1 focus:ring-green-500/30 outline-none"
+                        placeholder="EAAxxxxxxxxxxxxxxx"
+                        value={data.metaAccessToken}
+                        onChange={e => update({ metaAccessToken: e.target.value.trim(), whatsappVerified: false })}
+                      />
+                    </div>
+                    {verifyError && (
+                      <div className="flex items-start gap-2 text-xs text-red-400">
+                        <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
+                        {verifyError}
+                      </div>
+                    )}
+                    <button
+                      onClick={handleVerify}
+                      disabled={verifying || !data.metaPhoneNumberId || !data.metaAccessToken}
+                      className="btn-secondary flex items-center gap-2 text-sm py-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {verifying
+                        ? <><Loader2 className="h-4 w-4 animate-spin" /> Verificando…</>
+                        : <><CheckCircle className="h-4 w-4" /> Verificar e conectar</>
+                      }
+                    </button>
                   </div>
-                )}
-                <button
-                  onClick={handleVerify}
-                  disabled={verifying || !data.metaPhoneNumberId || !data.metaAccessToken}
-                  className="btn-secondary flex items-center gap-2 text-sm py-2 disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  {verifying
-                    ? <><Loader2 className="h-4 w-4 animate-spin" /> Verificando…</>
-                    : <><CheckCircle className="h-4 w-4" /> Verificar e conectar</>
-                  }
-                </button>
-              </div>
+                </div>
+              )}
             </div>
 
             {/* Support advice */}
@@ -652,9 +684,9 @@ export function StepChannels({ data, update, onNext, onBack, onOpenSupport }: Pr
                 <Sparkles className="h-4 w-4 text-primary" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-white">Ficou com dúvida na configuração?</p>
+                <p className="text-sm font-medium text-white">Ficou com dúvida?</p>
                 <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-                  Nosso assistente de IA conhece cada detalhe do painel da Meta e pode te guiar passo a passo — inclusive os erros mais comuns.
+                  Nosso assistente de IA pode te guiar passo a passo na configuração.
                 </p>
                 <button
                   type="button"

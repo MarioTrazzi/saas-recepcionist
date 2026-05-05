@@ -33,6 +33,43 @@ export class WhatsappService {
     this.logger.log(`[${tenantId}] Admin updated Meta access token${twilioPhone ? ' + Twilio phone' : ''}`)
   }
 
+  async embeddedSignup(tenantId: string, code: string, redirectUri: string): Promise<{ phoneNumber: string }> {
+    const appId = this.config.get('META_APP_ID')
+    const appSecret = this.config.get('META_APP_SECRET')
+
+    const tokenRes = await axios.get('https://graph.facebook.com/v20.0/oauth/access_token', {
+      params: { client_id: appId, client_secret: appSecret, redirect_uri: redirectUri, code },
+      timeout: 10000,
+    })
+    const accessToken: string = tokenRes.data.access_token
+
+    const waRes = await axios.get('https://graph.facebook.com/v20.0/me/whatsapp_business_accounts', {
+      params: { access_token: accessToken },
+      timeout: 10000,
+    })
+    const waAccounts: any[] = waRes.data.data || []
+    if (!waAccounts.length) throw new BadRequestException('Nenhuma conta WhatsApp Business encontrada nesta conta Meta.')
+
+    const phonesRes = await axios.get(`https://graph.facebook.com/v20.0/${waAccounts[0].id}/phone_numbers`, {
+      params: { fields: 'id,display_phone_number,verified_name', access_token: accessToken },
+      timeout: 10000,
+    })
+    const phones: any[] = phonesRes.data.data || []
+    if (!phones.length) throw new BadRequestException('Nenhum número de telefone encontrado nesta conta WhatsApp Business.')
+
+    const { id: phoneNumberId, display_phone_number: phoneNumber } = phones[0]
+    await this.tenantsService.update(tenantId, {
+      metaPhoneNumberId: phoneNumberId,
+      metaAccessToken: accessToken,
+      whatsappPhoneNumber: phoneNumber,
+      whatsappChannelEnabled: true,
+      whatsappInstanceName: null,
+    })
+
+    this.logger.log(`[${tenantId}] WhatsApp configured via Embedded Signup: ${phoneNumber}`)
+    return { phoneNumber }
+  }
+
   async setupCloudApi(tenantId: string, phoneNumberId: string, accessToken: string, appId?: string): Promise<{ phoneNumber: string }> {
     // Validate credentials against Meta
     try {

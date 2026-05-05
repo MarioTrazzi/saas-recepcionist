@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Phone } from 'lucide-react'
+import { Phone, Loader2 } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
+import { authApi } from '@/lib/api'
+import { facebookEmbeddedSignup } from '@/lib/facebook'
 
 function GoogleIcon() {
   return (
@@ -14,11 +16,21 @@ function GoogleIcon() {
   )
 }
 
+function MetaIcon() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none">
+      <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z" fill="#1877F2"/>
+      <path d="M13.25 15.5h-2.5v-5.25H9.5V8.5h1.25V7.75C10.75 6.23 11.61 5.5 13 5.5c.62 0 1.25.06 1.25.06v1.44h-.7c-.69 0-.8.33-.8.81V8.5h1.44l-.19 1.75H12.75V15.5z" fill="white"/>
+    </svg>
+  )
+}
+
 export default function RegisterPage() {
   const [form, setForm] = useState({ tenantName: '', ownerName: '', email: '', password: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const { register } = useAuthStore()
+  const [metaLoading, setMetaLoading] = useState(false)
+  const { register, setToken } = useAuthStore()
   const navigate = useNavigate()
 
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, [k]: e.target.value }))
@@ -37,6 +49,22 @@ export default function RegisterPage() {
     }
   }
 
+  const handleMetaRegister = async () => {
+    setError('')
+    setMetaLoading(true)
+    try {
+      const result = await facebookEmbeddedSignup()
+      if (!result) return
+      const { token, isNew } = await authApi.metaCallback(result.code, window.location.origin)
+      setToken(token)
+      navigate(isNew ? '/wizard' : '/app/dashboard', { replace: true })
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Falha ao autenticar com Meta. Tente novamente.')
+    } finally {
+      setMetaLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
@@ -48,7 +76,22 @@ export default function RegisterPage() {
           <p className="text-gray-400 text-sm mt-1">14 dias grátis, sem cartão</p>
         </div>
 
-        {/* Google signup — fastest path */}
+        {/* Meta signup — recommended (WhatsApp auto-configured) */}
+        <button
+          type="button"
+          onClick={handleMetaRegister}
+          disabled={metaLoading}
+          className="relative flex items-center justify-center gap-3 w-full border border-blue-500/60 rounded-xl px-4 py-2.5 text-sm font-medium text-white bg-[#1877F2] hover:bg-[#166FE5] transition-colors mb-2 disabled:opacity-70"
+        >
+          {metaLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <MetaIcon />}
+          Criar conta com Meta
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold bg-white/20 px-1.5 py-0.5 rounded text-white/90">
+            RECOMENDADO
+          </span>
+        </button>
+        <p className="text-center text-xs text-gray-500 mb-3">WhatsApp Business configurado automaticamente</p>
+
+        {/* Google signup */}
         <a
           href="https://backend-production-e05e.up.railway.app/api/auth/google"
           className="flex items-center justify-center gap-3 w-full border border-gray-700 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-200 bg-gray-900 hover:bg-gray-800 hover:border-gray-600 transition-colors mb-4"

@@ -8,7 +8,7 @@ import { StepChannels } from './steps/StepChannels'
 import { StepHandoff } from './steps/StepHandoff'
 import { StepActivate } from './steps/StepActivate'
 import { SupportChat } from '@/components/wizard/SupportChat'
-import { agentApi, phoneApi, calendarApi, whatsappApi, knowledgeApi } from '@/lib/api'
+import { agentApi, phoneApi, calendarApi, whatsappApi, knowledgeApi, tenantApi } from '@/lib/api'
 
 const STEPS = [
   { id: 1, title: 'Template', desc: 'Escolha o tipo de negócio' },
@@ -99,6 +99,15 @@ export default function WizardPage() {
   useEffect(() => {
     localStorage.setItem(DRAFT_KEY, JSON.stringify({ step, data }))
   }, [step, data])
+
+  // Pre-fill WhatsApp state if tenant already has it configured (e.g. Meta login)
+  useEffect(() => {
+    tenantApi.getMe().then(tenant => {
+      if (tenant.whatsappChannelEnabled && !data.whatsappVerified) {
+        update({ whatsappEnabled: true, whatsappVerified: true })
+      }
+    }).catch(() => {})
+  }, [])
 
   const update = (partial: Partial<WizardData>) => setData(d => ({ ...d, ...partial }))
 

@@ -47,4 +47,10 @@ export class AuthController {
       res.redirect(`${frontendUrl}/login?error=google_auth_failed`)
     }
   }
+
+  // Meta Embedded Signup — frontend sends code from FB.login() popup
+  @Post('meta/callback')
+  async metaCallback(@Body() body: { code: string; redirectUri: string }) {
+    return this.authService.handleMetaCallback(body.code, body.redirectUri)
+  }
 }

@@ -28,6 +28,8 @@ export const authApi = {
   register: (data: any) => api.post('/auth/register', data).then(r => r.data),
   login: (email: string, password: string) => api.post('/auth/login', { email, password }).then(r => r.data),
   me: () => api.get('/auth/me').then(r => r.data),
+  metaCallback: (code: string, redirectUri: string) =>
+    api.post('/auth/meta/callback', { code, redirectUri }).then(r => r.data as { token: string; isNew: boolean; whatsappConfigured: boolean }),
 }
 
 export const tenantApi = {
@@ -59,6 +61,8 @@ export const whatsappApi = {
     api.post('/whatsapp/setup-cloudapi', { phoneNumberId, accessToken, appId }).then(r => r.data),
   setupEvolutionFallback: (evolutionApiUrl: string, evolutionApiKey: string, phoneNumber: string) =>
     api.post('/whatsapp/setup-evolution-fallback', { evolutionApiUrl, evolutionApiKey, phoneNumber }).then(r => r.data),
+  embeddedSignup: (code: string, redirectUri: string) =>
+    api.post('/whatsapp/embedded-signup', { code, redirectUri }).then(r => r.data as { phoneNumber: string }),
   clearUnanswered: () => api.post('/whatsapp/clear-unanswered').then(r => r.data),
   status: () => api.get('/whatsapp/status').then(r => r.data),
   // kept for backward compat
