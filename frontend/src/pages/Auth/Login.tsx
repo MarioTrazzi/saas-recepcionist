@@ -81,22 +81,16 @@ export default function LoginPage() {
           <p className="text-gray-400 text-sm mt-1">Acesse seu painel</p>
         </div>
 
-        {/* Meta login — recommended (WhatsApp auto-configured) */}
-        <div className="relative mb-2">
-          <span className="absolute -top-2.5 left-3 z-10 text-[10px] font-bold bg-yellow-400 text-yellow-900 px-2 py-0.5 rounded-full shadow">
-            RECOMENDADO
-          </span>
-          <button
-            type="button"
-            onClick={handleMetaLogin}
-            disabled={metaLoading}
-            className="relative flex items-center justify-center gap-3 w-full border border-blue-500/60 rounded-xl px-4 py-3 text-sm font-medium text-white bg-[#1877F2] hover:bg-[#166FE5] transition-colors disabled:opacity-70"
-          >
-            {metaLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <MetaIcon />}
-            Entrar com Meta
-          </button>
-        </div>
-        <p className="text-center text-xs text-gray-500 mb-3">WhatsApp Business configurado automaticamente</p>
+        {/* Meta login */}
+        <button
+          type="button"
+          onClick={handleMetaLogin}
+          disabled={metaLoading}
+          className="flex items-center justify-center gap-3 w-full border border-blue-500/60 rounded-xl px-4 py-2.5 text-sm font-medium text-white bg-[#1877F2] hover:bg-[#166FE5] transition-colors mb-4 disabled:opacity-70"
+        >
+          {metaLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <MetaIcon />}
+          Entrar com Meta
+        </button>
 
         {/* Google login */}
         <a
