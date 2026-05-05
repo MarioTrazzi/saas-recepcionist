@@ -97,16 +97,7 @@ export class AuthService {
     return { token, user: { id: user.id, name: user.name, email: user.email, role: user.role, tenantId: user.tenantId } }
   }
 
-  async handleMetaCallback(code: string, redirectUri: string): Promise<{ token: string; isNew: boolean; whatsappConfigured: boolean }> {
-    const appId = this.config.get('META_APP_ID')
-    const appSecret = this.config.get('META_APP_SECRET')
-
-    // Exchange code for access token
-    const tokenRes = await axios.get('https://graph.facebook.com/v20.0/oauth/access_token', {
-      params: { client_id: appId, client_secret: appSecret, redirect_uri: redirectUri, code },
-    })
-    const accessToken: string = tokenRes.data.access_token
-
+  async handleMetaCallback(accessToken: string): Promise<{ token: string; isNew: boolean; whatsappConfigured: boolean }> {
     // Get user profile
     const profileRes = await axios.get('https://graph.facebook.com/me', {
       params: { fields: 'id,name,email', access_token: accessToken },

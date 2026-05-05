@@ -52,9 +52,9 @@ export class WhatsappController {
   @ApiBearerAuth()
   async embeddedSignup(
     @Request() req,
-    @Body() body: { code: string; redirectUri: string },
+    @Body() body: { accessToken: string },
   ) {
-    return this.svc.embeddedSignup(req.user.tenantId, body.code, body.redirectUri)
+    return this.svc.embeddedSignup(req.user.tenantId, body.accessToken)
   }
 
   // ── Authenticated: configure Cloud API credentials ────────────────────────

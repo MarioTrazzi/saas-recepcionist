@@ -37,23 +37,20 @@ export function loadFacebookSDK(): Promise<void> {
   })
 }
 
-export async function facebookEmbeddedSignup(): Promise<{ code: string } | null> {
+// Returns access token directly — avoids redirect_uri mismatch on server-side code exchange
+export async function facebookEmbeddedSignup(): Promise<{ accessToken: string } | null> {
   await loadFacebookSDK()
 
   return new Promise((resolve) => {
     window.FB.login(
       (response: any) => {
-        if (response.authResponse?.code) {
-          resolve({ code: response.authResponse.code })
+        if (response.authResponse?.accessToken) {
+          resolve({ accessToken: response.authResponse.accessToken })
         } else {
           resolve(null)
         }
       },
-      {
-        config_id: META_CONFIG_ID,
-        response_type: 'code',
-        override_default_response_type: true,
-      },
+      { config_id: META_CONFIG_ID },
     )
   })
 }

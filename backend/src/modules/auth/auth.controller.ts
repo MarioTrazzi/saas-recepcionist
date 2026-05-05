@@ -48,9 +48,9 @@ export class AuthController {
     }
   }
 
-  // Meta Embedded Signup — frontend sends code from FB.login() popup
+  // Meta Embedded Signup — frontend sends access token from FB.login() popup
   @Post('meta/callback')
-  async metaCallback(@Body() body: { code: string; redirectUri: string }) {
-    return this.authService.handleMetaCallback(body.code, body.redirectUri)
+  async metaCallback(@Body() body: { accessToken: string }) {
+    return this.authService.handleMetaCallback(body.accessToken)
   }
 }
