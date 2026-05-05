@@ -55,7 +55,7 @@ export default function RegisterPage() {
     try {
       const result = await facebookEmbeddedSignup()
       if (!result) return
-      const { token, isNew } = await authApi.metaCallback(result.accessToken)
+      const { token, isNew } = await authApi.metaCallback(result.code)
       setToken(token)
       navigate(isNew ? '/wizard' : '/app/dashboard', { replace: true })
     } catch (err: any) {

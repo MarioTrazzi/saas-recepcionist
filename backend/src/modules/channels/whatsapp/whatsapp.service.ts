@@ -33,7 +33,26 @@ export class WhatsappService {
     this.logger.log(`[${tenantId}] Admin updated Meta access token${twilioPhone ? ' + Twilio phone' : ''}`)
   }
 
-  async embeddedSignup(tenantId: string, accessToken: string): Promise<{ phoneNumber: string }> {
+  private async exchangeMetaCode(code: string): Promise<string> {
+    const appId = this.config.get('META_APP_ID')
+    const appSecret = this.config.get('META_APP_SECRET')
+    if (!appId || !appSecret) throw new BadRequestException('META_APP_ID ou META_APP_SECRET não configurados.')
+
+    try {
+      const { data } = await axios.get('https://graph.facebook.com/oauth/access_token', {
+        params: { client_id: appId, client_secret: appSecret, code },
+        timeout: 10000,
+      })
+      return data.access_token as string
+    } catch (err: any) {
+      const msg = err.response?.data?.error?.message || err.message
+      this.logger.error(`Meta code exchange failed: ${msg}`)
+      throw new BadRequestException(`Falha ao validar código Meta: ${msg}`)
+    }
+  }
+
+  async embeddedSignup(tenantId: string, code: string): Promise<{ phoneNumber: string }> {
+    const accessToken = await this.exchangeMetaCode(code)
     const waRes = await axios.get('https://graph.facebook.com/v20.0/me/whatsapp_business_accounts', {
       params: { access_token: accessToken },
       timeout: 10000,

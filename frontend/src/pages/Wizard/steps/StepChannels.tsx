@@ -316,7 +316,7 @@ export function StepChannels({ data, update, onNext, onBack, onOpenSupport }: Pr
     try {
       const result = await facebookEmbeddedSignup()
       if (!result) return // user cancelled
-      const { phoneNumber } = await whatsappApi.embeddedSignup(result.accessToken)
+      const { phoneNumber } = await whatsappApi.embeddedSignup(result.code)
       update({ whatsappVerified: true, whatsappEnabled: true, whatsappPhoneNumber: phoneNumber } as any)
     } catch (e: any) {
       setEmbeddedError(e?.response?.data?.message || 'Não foi possível conectar. Tente novamente.')

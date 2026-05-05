@@ -99,7 +99,29 @@ export class AuthService {
     return { token, user: { id: user.id, name: user.name, email: user.email, role: user.role, tenantId: user.tenantId } }
   }
 
-  async handleMetaCallback(accessToken: string): Promise<{ token: string; isNew: boolean; whatsappConfigured: boolean }> {
+  private async exchangeMetaCode(code: string): Promise<string> {
+    const appId = this.config.get('META_APP_ID')
+    const appSecret = this.config.get('META_APP_SECRET')
+    if (!appId || !appSecret) throw new BadRequestException('META_APP_ID ou META_APP_SECRET não configurados no servidor.')
+
+    try {
+      // For JS SDK popup flow, redirect_uri is not required
+      const { data } = await axios.get('https://graph.facebook.com/oauth/access_token', {
+        params: { client_id: appId, client_secret: appSecret, code },
+        timeout: 10000,
+      })
+      this.logger.log(`Meta code exchanged successfully`)
+      return data.access_token as string
+    } catch (err: any) {
+      const msg = err.response?.data?.error?.message || err.message
+      this.logger.error(`Meta code exchange failed: ${msg}`)
+      throw new BadRequestException(`Falha ao validar autenticação Meta: ${msg}`)
+    }
+  }
+
+  async handleMetaCallback(code: string): Promise<{ token: string; isNew: boolean; whatsappConfigured: boolean }> {
+    const accessToken = await this.exchangeMetaCode(code)
+
     // Get user profile
     let profileData: { id: string; name: string; email?: string }
     try {

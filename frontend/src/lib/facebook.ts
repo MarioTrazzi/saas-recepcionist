@@ -37,22 +37,23 @@ export function loadFacebookSDK(): Promise<void> {
   })
 }
 
-// Returns access token directly — avoids redirect_uri mismatch on server-side code exchange
-export async function facebookEmbeddedSignup(): Promise<{ accessToken: string } | null> {
+// Embedded Signup requires response_type=code — server exchanges code for token (no redirect_uri for JS SDK)
+export async function facebookEmbeddedSignup(): Promise<{ code: string } | null> {
   await loadFacebookSDK()
 
   return new Promise((resolve) => {
     window.FB.login(
       (response: any) => {
-        if (response.authResponse?.accessToken) {
-          resolve({ accessToken: response.authResponse.accessToken })
+        if (response.authResponse?.code) {
+          resolve({ code: response.authResponse.code })
         } else {
           resolve(null)
         }
       },
       {
         config_id: META_CONFIG_ID,
-        scope: 'whatsapp_business_management,whatsapp_business_messaging',
+        response_type: 'code',
+        override_default_response_type: true,
       },
     )
   })
