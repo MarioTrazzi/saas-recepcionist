@@ -53,18 +53,35 @@ export class WhatsappService {
 
   async embeddedSignup(tenantId: string, code: string): Promise<{ phoneNumber: string }> {
     const accessToken = await this.exchangeMetaCode(code)
-    const waRes = await axios.get('https://graph.facebook.com/v20.0/me/whatsapp_business_accounts', {
-      params: { access_token: accessToken },
-      timeout: 10000,
-    })
-    const waAccounts: any[] = waRes.data.data || []
+
+    let waAccounts: any[]
+    try {
+      const waRes = await axios.get('https://graph.facebook.com/v20.0/me/whatsapp_business_accounts', {
+        params: { access_token: accessToken },
+        timeout: 10000,
+      })
+      waAccounts = waRes.data.data || []
+    } catch (err: any) {
+      const metaMsg = err.response?.data?.error?.message || err.message
+      this.logger.error(`[${tenantId}] GET /me/whatsapp_business_accounts failed: ${metaMsg}`)
+      throw new BadRequestException(`Não foi possível aceder à conta WhatsApp Business: ${metaMsg}`)
+    }
+
     if (!waAccounts.length) throw new BadRequestException('Nenhuma conta WhatsApp Business encontrada nesta conta Meta.')
 
-    const phonesRes = await axios.get(`https://graph.facebook.com/v20.0/${waAccounts[0].id}/phone_numbers`, {
-      params: { fields: 'id,display_phone_number,verified_name', access_token: accessToken },
-      timeout: 10000,
-    })
-    const phones: any[] = phonesRes.data.data || []
+    let phones: any[]
+    try {
+      const phonesRes = await axios.get(`https://graph.facebook.com/v20.0/${waAccounts[0].id}/phone_numbers`, {
+        params: { fields: 'id,display_phone_number,verified_name', access_token: accessToken },
+        timeout: 10000,
+      })
+      phones = phonesRes.data.data || []
+    } catch (err: any) {
+      const metaMsg = err.response?.data?.error?.message || err.message
+      this.logger.error(`[${tenantId}] GET /phone_numbers failed: ${metaMsg}`)
+      throw new BadRequestException(`Não foi possível obter números de telefone: ${metaMsg}`)
+    }
+
     if (!phones.length) throw new BadRequestException('Nenhum número de telefone encontrado nesta conta WhatsApp Business.')
 
     const { id: phoneNumberId, display_phone_number: phoneNumber } = phones[0]
