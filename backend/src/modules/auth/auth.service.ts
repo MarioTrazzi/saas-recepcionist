@@ -116,8 +116,9 @@ export class AuthService {
       )
     }
 
-    const { name, email } = profileData
-    if (!email) throw new BadRequestException('Conta Meta sem email. Adicione um email à sua conta do Facebook.')
+    const { id: fbId, name } = profileData
+    // Facebook Login for Business doesn't return email — use synthetic address based on FB user ID
+    const email = profileData.email || `fb_${fbId}@meta.local`
 
     let user = await this.tenantsService.getUserByEmail(email)
     let isNew = false
