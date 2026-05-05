@@ -100,10 +100,10 @@ export default function WizardPage() {
     localStorage.setItem(DRAFT_KEY, JSON.stringify({ step, data }))
   }, [step, data])
 
-  // Pre-fill WhatsApp state if tenant already has it configured (e.g. Meta login)
+  // Sync WhatsApp state from server — overrides stale draft (e.g. after Meta login auto-config)
   useEffect(() => {
     tenantApi.getMe().then(tenant => {
-      if (tenant.whatsappChannelEnabled && !data.whatsappVerified) {
+      if (tenant.whatsappChannelEnabled) {
         update({ whatsappEnabled: true, whatsappVerified: true })
       }
     }).catch(() => {})
