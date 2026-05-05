@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common'
+import { Injectable, UnauthorizedException, BadRequestException, Logger } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { ConfigService } from '@nestjs/config'
 import { TenantsService } from '../tenants/tenants.service'
@@ -8,6 +8,8 @@ import axios from 'axios'
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name)
+
   constructor(
     private tenantsService: TenantsService,
     private jwtService: JwtService,
@@ -99,11 +101,22 @@ export class AuthService {
 
   async handleMetaCallback(accessToken: string): Promise<{ token: string; isNew: boolean; whatsappConfigured: boolean }> {
     // Get user profile
-    const profileRes = await axios.get('https://graph.facebook.com/me', {
-      params: { fields: 'id,name,email', access_token: accessToken },
-    })
-    const { name, email } = profileRes.data
+    let profileData: { id: string; name: string; email?: string }
+    try {
+      const profileRes = await axios.get('https://graph.facebook.com/me', {
+        params: { fields: 'id,name,email', access_token: accessToken },
+        timeout: 10000,
+      })
+      profileData = profileRes.data
+      this.logger.log(`Meta profile fetched: id=${profileData.id}, hasEmail=${!!profileData.email}`)
+    } catch (err: any) {
+      this.logger.error(`Meta GET /me failed: ${err.response?.data ? JSON.stringify(err.response.data) : err.message}`)
+      throw new BadRequestException(
+        err.response?.data?.error?.message || 'Falha ao obter perfil Meta. Verifique as permissões do app.',
+      )
+    }
 
+    const { name, email } = profileData
     if (!email) throw new BadRequestException('Conta Meta sem email. Adicione um email à sua conta do Facebook.')
 
     let user = await this.tenantsService.getUserByEmail(email)

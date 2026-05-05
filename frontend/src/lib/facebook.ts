@@ -50,7 +50,10 @@ export async function facebookEmbeddedSignup(): Promise<{ accessToken: string } 
           resolve(null)
         }
       },
-      { config_id: META_CONFIG_ID },
+      {
+        config_id: META_CONFIG_ID,
+        scope: 'email,public_profile,whatsapp_business_management,whatsapp_business_messaging',
+      },
     )
   })
 }
