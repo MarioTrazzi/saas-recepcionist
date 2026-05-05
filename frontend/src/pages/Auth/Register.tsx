@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Phone, Loader2 } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
 import { authApi } from '@/lib/api'
-import { facebookEmbeddedSignup } from '@/lib/facebook'
+import { loadFacebookSDK, facebookEmbeddedSignup } from '@/lib/facebook'
 
 function GoogleIcon() {
   return (
@@ -34,6 +34,8 @@ export default function RegisterPage() {
   const navigate = useNavigate()
 
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, [k]: e.target.value }))
+
+  useEffect(() => { loadFacebookSDK().catch(() => {}) }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

@@ -38,10 +38,15 @@ export function loadFacebookSDK(): Promise<void> {
 }
 
 // Embedded Signup requires response_type=code — server exchanges code for token (no redirect_uri for JS SDK)
-export async function facebookEmbeddedSignup(): Promise<{ code: string } | null> {
-  await loadFacebookSDK()
-
-  return new Promise((resolve) => {
+// NOTE: must be called synchronously within a user gesture (no await before this call)
+// Preload the SDK with loadFacebookSDK() on component mount so FB is ready when user clicks
+export function facebookEmbeddedSignup(): Promise<{ code: string } | null> {
+  return new Promise((resolve, reject) => {
+    if (!window.FB) {
+      reject(new Error('SDK do Facebook não carregado. Aguarde um momento e tente novamente.'))
+      return
+    }
+    // FB.login() called synchronously here — preserves user gesture context on mobile
     window.FB.login(
       (response: any) => {
         if (response.authResponse?.code) {

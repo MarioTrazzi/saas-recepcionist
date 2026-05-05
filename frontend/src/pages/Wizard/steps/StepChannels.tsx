@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import { WizardData } from '../index'
 import { whatsappApi, phoneApi } from '@/lib/api'
-import { facebookEmbeddedSignup } from '@/lib/facebook'
+import { loadFacebookSDK, facebookEmbeddedSignup } from '@/lib/facebook'
 
 interface Props {
   data: WizardData
@@ -252,6 +252,8 @@ export function StepChannels({ data, update, onNext, onBack, onOpenSupport }: Pr
     enabled: data.phoneEnabled,
     staleTime: 60_000,
   })
+
+  useEffect(() => { loadFacebookSDK().catch(() => {}) }, [])
 
   useEffect(() => {
     if (!data.phoneEnabled) {

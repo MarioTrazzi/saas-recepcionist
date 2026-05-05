@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Phone, Loader2 } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
 import { authApi } from '@/lib/api'
-import { facebookEmbeddedSignup } from '@/lib/facebook'
+import { loadFacebookSDK, facebookEmbeddedSignup } from '@/lib/facebook'
 
 function GoogleIcon() {
   return (
@@ -36,6 +36,9 @@ export default function LoginPage() {
   const [params] = useSearchParams()
 
   const googleError = params.get('error') === 'google_auth_failed'
+
+  // Preload SDK on mount so FB.login() can be called synchronously on click (mobile popup fix)
+  useEffect(() => { loadFacebookSDK().catch(() => {}) }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
