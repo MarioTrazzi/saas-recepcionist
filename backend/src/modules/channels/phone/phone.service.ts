@@ -243,7 +243,8 @@ export class PhoneService {
           },
           tts: {
             voice_id: tenant.elevenLabsVoiceId || this.config.get('ELEVENLABS_DEFAULT_VOICE_ID') || 'Rachel',
-            model_id: 'eleven_turbo_v2_5', // multilingual model required for non-English agents
+            model_id: 'eleven_turbo_v2_5',
+            expressive_mode: true,
           },
         },
       },
@@ -251,7 +252,7 @@ export class PhoneService {
     )
 
     const agentId = response.data.agent_id
-    await this.tenantsService.update(tenantId, { elevenLabsAgentId: agentId })
+    await this.tenantsService.update(tenantId, { elevenLabsAgentId: agentId, elevenLabsExpressiveMode: true })
     this.logger.log(`[${tenantId}] ElevenLabs agent created: ${agentId} (transfer tool: ${hasHandoff})`)
     return agentId
   }
@@ -295,16 +296,44 @@ export class PhoneService {
 
     const language = dto.language ? dto.language.toLowerCase() : undefined
 
+    // Rebuild tools so they're always preserved when patching the prompt
+    let tools: any[] | undefined
+    if (dto.prompt !== undefined) {
+      const cfg = await this.agentService.getConfig(tenantId)
+      const backendUrl = this.config.get('BACKEND_PUBLIC_URL') || this.config.get('BACKEND_URL')
+      const hasHandoff = cfg.handoffMode !== 'none' && cfg.handoffPhone
+      tools = hasHandoff
+        ? [{
+            type: 'webhook',
+            name: 'transfer_to_human',
+            description:
+              'Transfere esta chamada para um atendente humano. ' +
+              'Use apenas quando: (1) o cliente pedir explicitamente falar com um humano, ' +
+              '(2) a situação envolver urgência médica ou emergência, ' +
+              '(3) após duas tentativas sem resolver o problema do cliente. ' +
+              'Não use por padrão — tente resolver primeiro.',
+            webhook: {
+              url: `${backendUrl}/api/phone/transfer/{{agent_id}}`,
+              method: 'POST',
+              api_schema: { type: 'object', properties: {}, required: [] },
+            },
+          }]
+        : []
+    }
+
     await axios.patch(
       `https://api.elevenlabs.io/v1/convai/agents/${tenant.elevenLabsAgentId}`,
       {
         ...(dto.name !== undefined && { name: dto.name }),
         conversation_config: {
           agent: {
-            ...(dto.prompt !== undefined && { prompt: {
-              prompt: dto.prompt,
-              ...(dto.llm !== undefined && { llm: dto.llm }),
-            }}),
+            ...(dto.prompt !== undefined && {
+              prompt: {
+                prompt: dto.prompt,
+                tools,
+                ...(dto.llm !== undefined && { llm: dto.llm }),
+              },
+            }),
             ...(dto.firstMessage !== undefined && { first_message: dto.firstMessage }),
             ...(language && { language }),
             ...(dto.interruptible !== undefined && {
