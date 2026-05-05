@@ -61,7 +61,7 @@ export default function LoginPage() {
       setToken(token)
       navigate(isNew ? '/wizard' : '/app/dashboard', { replace: true })
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Falha ao autenticar com Meta. Tente novamente.')
+      setError(err?.response?.data?.message || err?.message || 'Falha ao autenticar com Meta. Tente novamente.')
     } finally {
       setMetaLoading(false)
     }
