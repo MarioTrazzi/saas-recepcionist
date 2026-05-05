@@ -95,7 +95,7 @@ export default function LoginPage() {
 
         {/* Google login */}
         <a
-          href="https://backend-production-e05e.up.railway.app/api/auth/google"
+          href={`${import.meta.env.VITE_API_URL || ''}/api/auth/google`}
           className="flex items-center justify-center gap-3 w-full border border-gray-700 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-200 bg-gray-900 hover:bg-gray-800 hover:border-gray-600 transition-colors mb-4"
         >
           <GoogleIcon />
