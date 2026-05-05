@@ -13,6 +13,7 @@ import CalendarPage from '@/pages/Calendar'
 import BillingPage from '@/pages/Billing'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import GoogleCallbackPage from '@/pages/Auth/GoogleCallback'
+import PrivacyPolicyPage from '@/pages/PrivacyPolicy'
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
@@ -30,6 +31,7 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/auth/google-callback" element={<GoogleCallbackPage />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
       <Route
         path="/wizard"
         element={<AuthGuard><WizardPage /></AuthGuard>}
