@@ -54,6 +54,7 @@ export function facebookLogin(): Promise<{ code: string } | null> {
         }
       },
       {
+        scope: 'public_profile,email',
         response_type: 'code',
         override_default_response_type: true,
       },
