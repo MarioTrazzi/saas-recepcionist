@@ -18,8 +18,8 @@ function GoogleIcon() {
 
 function MetaIcon() {
   return (
-    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none">
-      <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z" fill="#1877F2"/>
+    <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none">
+      <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z" fill="white" fillOpacity="0.2"/>
       <path d="M13.25 15.5h-2.5v-5.25H9.5V8.5h1.25V7.75C10.75 6.23 11.61 5.5 13 5.5c.62 0 1.25.06 1.25.06v1.44h-.7c-.69 0-.8.33-.8.81V8.5h1.44l-.19 1.75H12.75V15.5z" fill="white"/>
     </svg>
   )
@@ -77,18 +77,20 @@ export default function RegisterPage() {
         </div>
 
         {/* Meta signup — recommended (WhatsApp auto-configured) */}
-        <button
-          type="button"
-          onClick={handleMetaRegister}
-          disabled={metaLoading}
-          className="relative flex items-center justify-center gap-3 w-full border border-blue-500/60 rounded-xl px-4 py-2.5 text-sm font-medium text-white bg-[#1877F2] hover:bg-[#166FE5] transition-colors mb-2 disabled:opacity-70"
-        >
-          {metaLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <MetaIcon />}
-          Criar conta com Meta
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold bg-white/20 px-1.5 py-0.5 rounded text-white/90">
+        <div className="relative mb-2">
+          <span className="absolute -top-2.5 left-3 z-10 text-[10px] font-bold bg-yellow-400 text-yellow-900 px-2 py-0.5 rounded-full shadow">
             RECOMENDADO
           </span>
-        </button>
+          <button
+            type="button"
+            onClick={handleMetaRegister}
+            disabled={metaLoading}
+            className="relative flex items-center justify-center gap-3 w-full border border-blue-500/60 rounded-xl px-4 py-3 text-sm font-medium text-white bg-[#1877F2] hover:bg-[#166FE5] transition-colors disabled:opacity-70"
+          >
+            {metaLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <MetaIcon />}
+            Criar conta com Meta
+          </button>
+        </div>
         <p className="text-center text-xs text-gray-500 mb-3">WhatsApp Business configurado automaticamente</p>
 
         {/* Google signup */}
