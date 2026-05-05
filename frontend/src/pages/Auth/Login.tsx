@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Phone, Loader2 } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
 import { authApi } from '@/lib/api'
-import { loadFacebookSDK, facebookEmbeddedSignup } from '@/lib/facebook'
+import { loadFacebookSDK, facebookLogin } from '@/lib/facebook'
 
 function GoogleIcon() {
   return (
@@ -58,7 +58,7 @@ export default function LoginPage() {
     setError('')
     setMetaLoading(true)
     try {
-      const result = await facebookEmbeddedSignup()
+      const result = await facebookLogin()
       if (!result) return // user cancelled popup
       const { token, isNew } = await authApi.metaCallback(result.code)
       setToken(token)
