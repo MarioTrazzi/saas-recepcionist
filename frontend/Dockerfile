@@ -6,6 +6,8 @@ RUN npm ci
 COPY . .
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
+ARG VITE_META_APP_ID
+ENV VITE_META_APP_ID=$VITE_META_APP_ID
 RUN npm run build
 
 # ── Serve stage ────────────────────────────────────────────────────────────────
