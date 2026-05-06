@@ -120,6 +120,11 @@ export class AuthService {
   }
 
   async handleMetaCallback(accessToken: string): Promise<{ token: string; isNew: boolean; whatsappConfigured: boolean }> {
+    if (!accessToken) {
+      this.logger.error('Meta callback received without accessToken — likely stale frontend bundle')
+      throw new BadRequestException('Access token Meta não recebido. Atualize a página (Ctrl+Shift+R) e tente novamente.')
+    }
+
     // Get user profile
     let profileData: { id: string; name: string; email?: string }
     try {
