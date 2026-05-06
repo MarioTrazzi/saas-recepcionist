@@ -155,11 +155,12 @@ export default function WizardPage() {
 
       if (data.phoneEnabled && data.phoneNumberSid) {
         await phoneApi.assign(data.phoneNumberSid)
-        try {
-          await phoneApi.createElevenLabsAgent()
-        } catch (e) {
-          console.warn('ElevenLabs agent creation skipped:', e)
-        }
+      }
+
+      try {
+        await phoneApi.createElevenLabsAgent()
+      } catch (e) {
+        console.warn('ElevenLabs agent creation skipped:', e)
       }
 
       if (data.whatsappEnabled && data.whatsappVerified && data.metaPhoneNumberId && data.metaAccessToken) {

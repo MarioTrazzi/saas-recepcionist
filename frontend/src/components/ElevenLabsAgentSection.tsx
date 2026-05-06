@@ -92,7 +92,13 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
   )
 }
 
-export default function ElevenLabsAgentSection() {
+export default function ElevenLabsAgentSection({
+  hasPhone = false,
+  hasWhatsapp = false,
+}: {
+  hasPhone?: boolean
+  hasWhatsapp?: boolean
+}) {
   const qc = useQueryClient()
   const [form, setForm] = useState<any>(null)
   const [saved, setSaved] = useState(false)
@@ -225,6 +231,30 @@ export default function ElevenLabsAgentSection() {
           <ExternalLink className="h-3 w-3" /> Abrir no ElevenLabs
         </a>
       </div>
+
+      {/* No-channel warning */}
+      {!hasPhone && !hasWhatsapp && (
+        <div className="flex items-start gap-3 rounded-xl border border-yellow-500/30 bg-yellow-500/8 px-4 py-3">
+          <AlertCircle className="h-4 w-4 text-yellow-400 flex-shrink-0 mt-0.5" />
+          <p className="text-xs text-yellow-300 leading-relaxed">
+            Nenhum canal configurado. Configure um{' '}
+            <button
+              onClick={() => document.getElementById('phone-channel-section')?.scrollIntoView({ behavior: 'smooth' })}
+              className="underline hover:text-yellow-100 transition-colors"
+            >
+              número de telefone
+            </button>
+            {' '}ou{' '}
+            <button
+              onClick={() => document.getElementById('whatsapp-channel-section')?.scrollIntoView({ behavior: 'smooth' })}
+              className="underline hover:text-yellow-100 transition-colors"
+            >
+              WhatsApp
+            </button>
+            {' '}para que o agente possa receber chamadas e mensagens.
+          </p>
+        </div>
+      )}
 
       {/* Widget demo */}
       <div className="rounded-xl bg-gray-900/60 border border-gray-700">

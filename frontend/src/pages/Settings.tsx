@@ -416,10 +416,13 @@ export default function SettingsPage() {
         </div>
 
         {/* ElevenLabs Agent */}
-        <ElevenLabsAgentSection />
+        <ElevenLabsAgentSection
+          hasPhone={!!tenant?.twilioPhoneNumber}
+          hasWhatsapp={!!waStatus?.connected}
+        />
 
         {/* WhatsApp */}
-        <div className="card p-6">
+        <div id="whatsapp-channel-section" className="card p-6">
           <h2 className="font-semibold text-white flex items-center gap-2 mb-5">
             <MessageSquare className="h-4 w-4 text-green-400" /> WhatsApp Business
           </h2>

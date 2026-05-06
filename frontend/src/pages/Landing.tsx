@@ -874,7 +874,8 @@ export default function LandingPage() {
               </h1>
               <p className="lead">
                 Configure um assistente de IA que atende ligações e WhatsApp com voz
-                natural, agenda compromissos e resolve dúvidas — enquanto você dorme.
+                natural, captura leads, agenda compromissos e faz follow-up automático
+                — enquanto você dorme.
               </p>
               <div className="hero-cta">
                 <Link to="/register" className="btn btn-primary btn-lg">
