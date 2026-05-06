@@ -38,8 +38,9 @@ export function loadFacebookSDK(): Promise<void> {
 }
 
 // Standard Facebook Login for authentication (no config_id, no WhatsApp permissions)
-// Works in Live mode without App Review. Call synchronously within a user gesture.
-export function facebookLogin(): Promise<{ code: string } | null> {
+// Uses implicit token flow (default) — avoids redirect_uri issues of code exchange.
+// Call synchronously within a user gesture.
+export function facebookLogin(): Promise<{ accessToken: string } | null> {
   return new Promise((resolve, reject) => {
     if (!window.FB) {
       reject(new Error('SDK do Facebook não carregado. Aguarde um momento e tente novamente.'))
@@ -47,17 +48,13 @@ export function facebookLogin(): Promise<{ code: string } | null> {
     }
     window.FB.login(
       (response: any) => {
-        if (response.authResponse?.code) {
-          resolve({ code: response.authResponse.code })
+        if (response.authResponse?.accessToken) {
+          resolve({ accessToken: response.authResponse.accessToken })
         } else {
           resolve(null)
         }
       },
-      {
-        scope: 'public_profile,email',
-        response_type: 'code',
-        override_default_response_type: true,
-      },
+      { scope: 'public_profile,email' },
     )
   })
 }

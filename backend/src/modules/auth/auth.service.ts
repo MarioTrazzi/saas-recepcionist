@@ -119,9 +119,7 @@ export class AuthService {
     }
   }
 
-  async handleMetaCallback(code: string): Promise<{ token: string; isNew: boolean; whatsappConfigured: boolean }> {
-    const accessToken = await this.exchangeMetaCode(code)
-
+  async handleMetaCallback(accessToken: string): Promise<{ token: string; isNew: boolean; whatsappConfigured: boolean }> {
     // Get user profile
     let profileData: { id: string; name: string; email?: string }
     try {

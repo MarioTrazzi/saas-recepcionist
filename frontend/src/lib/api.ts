@@ -28,8 +28,8 @@ export const authApi = {
   register: (data: any) => api.post('/auth/register', data).then(r => r.data),
   login: (email: string, password: string) => api.post('/auth/login', { email, password }).then(r => r.data),
   me: () => api.get('/auth/me').then(r => r.data),
-  metaCallback: (code: string) =>
-    api.post('/auth/meta/callback', { code }).then(r => r.data as { token: string; isNew: boolean; whatsappConfigured: boolean }),
+  metaCallback: (accessToken: string) =>
+    api.post('/auth/meta/callback', { accessToken }).then(r => r.data as { token: string; isNew: boolean; whatsappConfigured: boolean }),
 }
 
 export const tenantApi = {

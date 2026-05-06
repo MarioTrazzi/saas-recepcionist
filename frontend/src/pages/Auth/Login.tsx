@@ -60,7 +60,7 @@ export default function LoginPage() {
     try {
       const result = await facebookLogin()
       if (!result) return // user cancelled popup
-      const { token, isNew } = await authApi.metaCallback(result.code)
+      const { token, isNew } = await authApi.metaCallback(result.accessToken)
       setToken(token)
       navigate(isNew ? '/wizard' : '/app/dashboard', { replace: true })
     } catch (err: any) {
