@@ -1,11 +1,173 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   Phone, MessageSquare, CheckCircle2, ArrowRight,
   Globe, BarChart3, Calendar, Users, Brain, Plus, Zap,
   FileText, Upload, MousePointerClick, Wifi, UserPlus,
+  LayoutDashboard, LogOut, ChevronDown,
 } from 'lucide-react'
+import { useAuthStore } from '@/stores/auth.store'
 import './Landing.css'
+
+/* ─────────────────────────────────────────────
+   User menu — avatar + dropdown when logged in
+───────────────────────────────────────────── */
+function UserMenu() {
+  const user = useAuthStore(s => s.user)
+  const logout = useAuthStore(s => s.logout)
+  const navigate = useNavigate()
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const onClickOutside = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    const onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', onClickOutside)
+    document.addEventListener('keydown', onEsc)
+    return () => {
+      document.removeEventListener('mousedown', onClickOutside)
+      document.removeEventListener('keydown', onEsc)
+    }
+  }, [open])
+
+  if (!user) return null
+
+  const displayName = user.name || user.email?.split('@')[0] || 'Usuário'
+  const initials = displayName
+    .split(' ')
+    .map(p => p[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase() || 'U'
+
+  const handleLogout = () => {
+    logout()
+    setOpen(false)
+  }
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          padding: '6px 12px 6px 6px',
+          height: 40,
+          borderRadius: 999,
+          border: '1px solid rgba(255,255,255,.14)',
+          background: 'rgba(255,255,255,.04)',
+          color: 'var(--text)',
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+          fontSize: 14,
+          fontWeight: 500,
+          transition: 'background .15s, border-color .15s',
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.background = 'rgba(255,255,255,.07)'
+          e.currentTarget.style.borderColor = 'rgba(255,255,255,.22)'
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.background = 'rgba(255,255,255,.04)'
+          e.currentTarget.style.borderColor = 'rgba(255,255,255,.14)'
+        }}
+      >
+        <span style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: 28,
+          height: 28,
+          borderRadius: '50%',
+          background: 'linear-gradient(135deg, var(--primary, #6c3ce1), var(--accent, #00d4aa))',
+          color: '#fff',
+          fontSize: 11,
+          fontWeight: 700,
+          letterSpacing: '.02em',
+          flexShrink: 0,
+        }}>{initials}</span>
+        <span style={{ maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {displayName}
+        </span>
+        <ChevronDown style={{
+          width: 14,
+          height: 14,
+          opacity: .6,
+          transition: 'transform .15s',
+          transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+        }} />
+      </button>
+
+      {open && (
+        <div
+          role="menu"
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 8px)',
+            right: 0,
+            minWidth: 220,
+            background: 'rgba(20,18,32,.96)',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(255,255,255,.12)',
+            borderRadius: 12,
+            boxShadow: '0 20px 50px -10px rgba(0,0,0,.5)',
+            padding: 6,
+            zIndex: 60,
+          }}
+        >
+          <div style={{
+            padding: '10px 12px',
+            borderBottom: '1px solid rgba(255,255,255,.08)',
+            marginBottom: 4,
+          }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{displayName}</div>
+            {user.email && (
+              <div style={{ fontSize: 11, color: 'var(--text-mute, #888)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {user.email}
+              </div>
+            )}
+          </div>
+          <button
+            role="menuitem"
+            onClick={() => { setOpen(false); navigate('/app/dashboard') }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              width: '100%', padding: '10px 12px', borderRadius: 8,
+              background: 'transparent', border: 'none', cursor: 'pointer',
+              color: 'var(--text)', fontSize: 13, fontFamily: 'inherit', textAlign: 'left',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,.06)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+          >
+            <LayoutDashboard style={{ width: 16, height: 16, opacity: .8 }} /> Ir para o painel
+          </button>
+          <button
+            role="menuitem"
+            onClick={handleLogout}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              width: '100%', padding: '10px 12px', borderRadius: 8,
+              background: 'transparent', border: 'none', cursor: 'pointer',
+              color: '#ff8585', fontSize: 13, fontFamily: 'inherit', textAlign: 'left',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,80,80,.08)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+          >
+            <LogOut style={{ width: 16, height: 16 }} /> Sair
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
 
 /* ─────────────────────────────────────────────
    Step visuals — lightweight JSX mock-UIs
@@ -549,6 +711,9 @@ function formatTimer(s: number) {
    Main component
 ───────────────────────────────────────────── */
 export default function LandingPage() {
+  const user = useAuthStore(s => s.user)
+  const token = useAuthStore(s => s.token)
+  const isLoggedIn = !!token && !!user
   const [liveCount, setLiveCount] = useState(1247)
   const [callTimer, setCallTimer] = useState(14)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
@@ -678,8 +843,17 @@ export default function LandingPage() {
             <a href="#faq">FAQ</a>
           </div>
           <div className="nav-right">
-            <Link to="/login" className="btn btn-ghost">Entrar</Link>
-            <Link to="/register" className="btn btn-primary">Começar grátis</Link>
+            {isLoggedIn ? (
+              <>
+                <Link to="/app/dashboard" className="btn btn-primary">Ir para o painel</Link>
+                <UserMenu />
+              </>
+            ) : (
+              <>
+                <Link to="/login" className="btn btn-ghost">Entrar</Link>
+                <Link to="/register" className="btn btn-primary">Começar grátis</Link>
+              </>
+            )}
           </div>
         </div>
       </nav>
@@ -883,7 +1057,7 @@ export default function LandingPage() {
                           Próximo passo <ArrowRight />
                         </button>
                       ) : (
-                        <Link to="/login" className="btn btn-ghost">
+                        <Link to={isLoggedIn ? '/app/dashboard' : '/login'} className="btn btn-ghost">
                           Próximo passo <ArrowRight />
                         </Link>
                       )}
