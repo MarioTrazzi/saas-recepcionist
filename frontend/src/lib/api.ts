@@ -74,6 +74,8 @@ export const whatsappApi = {
 export const knowledgeApi = {
   list: () => api.get('/knowledge').then(r => r.data),
   create: (data: any) => api.post('/knowledge', data).then(r => r.data),
+  update: (id: string, data: { title?: string; content?: string }) =>
+    api.patch(`/knowledge/${id}`, data).then(r => r.data),
   remove: (id: string) => api.delete(`/knowledge/${id}`).then(r => r.data),
   scrape: (url: string) => api.post('/knowledge/scrape', { url }).then(r => r.data),
   upload: (file: File) => {

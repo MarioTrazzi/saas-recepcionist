@@ -24,6 +24,14 @@ export class KnowledgeService {
     await this.itemRepo.update({ id, tenantId }, { isActive: false })
   }
 
+  async update(tenantId: string, id: string, dto: { title?: string; content?: string }) {
+    const item = await this.itemRepo.findOne({ where: { id, tenantId, isActive: true } })
+    if (!item) throw new BadRequestException('Item não encontrado')
+    if (dto.title !== undefined) item.title = dto.title
+    if (dto.content !== undefined) item.content = dto.content
+    return this.itemRepo.save(item)
+  }
+
   async scrapeWebsite(tenantId: string, url: string): Promise<KnowledgeItem[]> {
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
       url = 'https://' + url

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Body, Param, UseGuards, Request, UseInterceptors, UploadedFile } from '@nestjs/common'
+import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards, Request, UseInterceptors, UploadedFile } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger'
 import { KnowledgeService } from './knowledge.service'
@@ -19,6 +19,11 @@ export class KnowledgeController {
   @Post()
   create(@Request() req, @Body() body: { title: string; content: string; type?: any }) {
     return this.svc.create(req.user.tenantId, body)
+  }
+
+  @Patch(':id')
+  update(@Request() req, @Param('id') id: string, @Body() body: { title?: string; content?: string }) {
+    return this.svc.update(req.user.tenantId, id, body)
   }
 
   @Delete(':id')

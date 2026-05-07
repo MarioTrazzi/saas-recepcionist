@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { Plus, Trash2, Upload, FileText, BookOpen, Globe, Loader2, Lightbulb, ChevronDown } from 'lucide-react'
+import { Plus, Trash2, Upload, FileText, BookOpen, Globe, Loader2, Lightbulb, ChevronDown, Pencil, Check, X } from 'lucide-react'
 import { knowledgeApi, agentApi } from '@/lib/api'
 import { getSuggestions } from '@/lib/knowledge-suggestions'
 
@@ -12,6 +12,9 @@ export default function KnowledgePage() {
   const [scraping, setScraping] = useState(false)
   const [scrapeMsg, setScrapeMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [showSuggestions, setShowSuggestions] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [editContent, setEditContent] = useState('')
 
   const { data: items = [], isLoading } = useQuery({ queryKey: ['knowledge'], queryFn: knowledgeApi.list })
   const { data: agentConfig } = useQuery({ queryKey: ['agent-config'], queryFn: agentApi.getConfig, retry: false })
@@ -30,6 +33,32 @@ export default function KnowledgePage() {
     mutationFn: (id: string) => knowledgeApi.remove(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['knowledge'] }),
   })
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, title, content }: { id: string; title: string; content: string }) =>
+      knowledgeApi.update(id, { title, content }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['knowledge'] })
+      setEditingId(null)
+    },
+  })
+
+  const startEdit = (item: any) => {
+    setEditingId(item.id)
+    setEditTitle(item.title || '')
+    setEditContent(item.content || '')
+  }
+
+  const cancelEdit = () => {
+    setEditingId(null)
+    setEditTitle('')
+    setEditContent('')
+  }
+
+  const saveEdit = () => {
+    if (!editingId || !editTitle.trim() || !editContent.trim()) return
+    updateMutation.mutate({ id: editingId, title: editTitle.trim(), content: editContent.trim() })
+  }
 
   const uploadMutation = useMutation({
     mutationFn: (file: File) => knowledgeApi.upload(file),
@@ -177,32 +206,93 @@ export default function KnowledgePage() {
             </div>
           ) : (
             <div className="space-y-2">
-              {items.map((item: any) => (
-                <div key={item.id} className="card p-4 flex items-start gap-3 hover:border-gray-700 transition-colors">
-                  <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    {item.sourceFileName?.startsWith('http') ? (
-                      <Globe className="h-3.5 w-3.5 text-primary" />
+              {items.map((item: any) => {
+                const isEditing = editingId === item.id
+                return (
+                  <div key={item.id} className="card p-4 flex items-start gap-3 hover:border-gray-700 transition-colors">
+                    <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      {item.sourceFileName?.startsWith('http') ? (
+                        <Globe className="h-3.5 w-3.5 text-primary" />
+                      ) : (
+                        <FileText className="h-3.5 w-3.5 text-primary" />
+                      )}
+                    </div>
+
+                    {isEditing ? (
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <input
+                          className="input text-sm"
+                          value={editTitle}
+                          onChange={e => setEditTitle(e.target.value)}
+                          placeholder="Título"
+                          autoFocus
+                        />
+                        <textarea
+                          className="input text-xs min-h-[100px] resize-none"
+                          value={editContent}
+                          onChange={e => setEditContent(e.target.value)}
+                          placeholder="Conteúdo"
+                        />
+                        {item.sourceFileName && (
+                          <p className="text-[11px] text-gray-600 truncate">
+                            {item.sourceFileName.startsWith('http') ? '🌐 ' : '📄 '}{item.sourceFileName}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={saveEdit}
+                            disabled={!editTitle.trim() || !editContent.trim() || updateMutation.isPending}
+                            className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1.5 disabled:opacity-50"
+                          >
+                            {updateMutation.isPending
+                              ? <><Loader2 className="h-3 w-3 animate-spin" /> Salvando…</>
+                              : <><Check className="h-3 w-3" /> Salvar</>
+                            }
+                          </button>
+                          <button
+                            onClick={cancelEdit}
+                            disabled={updateMutation.isPending}
+                            className="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5"
+                          >
+                            <X className="h-3 w-3" /> Cancelar
+                          </button>
+                          {updateMutation.isError && (
+                            <span className="text-xs text-red-400">Erro ao salvar</span>
+                          )}
+                        </div>
+                      </div>
                     ) : (
-                      <FileText className="h-3.5 w-3.5 text-primary" />
+                      <>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-white">{item.title}</p>
+                          <p className="text-xs text-gray-400 mt-0.5 line-clamp-2">{item.content}</p>
+                          {item.sourceFileName && (
+                            <p className="text-[11px] text-gray-600 mt-1 truncate">
+                              {item.sourceFileName.startsWith('http') ? '🌐 ' : '📄 '}{item.sourceFileName}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <button
+                            onClick={() => startEdit(item)}
+                            className="text-gray-600 hover:text-primary transition-colors p-1"
+                            title="Editar"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => removeMutation.mutate(item.id)}
+                            className="text-gray-600 hover:text-red-400 transition-colors p-1"
+                            title="Remover"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </>
                     )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white">{item.title}</p>
-                    <p className="text-xs text-gray-400 mt-0.5 line-clamp-2">{item.content}</p>
-                    {item.sourceFileName && (
-                      <p className="text-[11px] text-gray-600 mt-1 truncate">
-                        {item.sourceFileName.startsWith('http') ? '🌐 ' : '📄 '}{item.sourceFileName}
-                      </p>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => removeMutation.mutate(item.id)}
-                    className="text-gray-600 hover:text-red-400 transition-colors flex-shrink-0 p-1"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
