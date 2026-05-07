@@ -50,6 +50,29 @@ export function StepPersonalize({ data, update, onNext, onBack }: Props) {
         </div>
 
         <div>
+          <label className="text-sm font-medium text-gray-300 block mb-3">Voz do agente</label>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => update({ agentGender: 'female' })}
+              className={`card p-4 text-left transition-all ${data.agentGender === 'female' ? 'border-primary ring-1 ring-primary' : 'hover:border-gray-700'}`}
+            >
+              <p className="font-medium text-sm text-white mb-0.5">Feminina</p>
+              <p className="text-xs text-gray-400">Voz padrão: Fabi (PT-BR)</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => update({ agentGender: 'male' })}
+              className={`card p-4 text-left transition-all ${data.agentGender === 'male' ? 'border-primary ring-1 ring-primary' : 'hover:border-gray-700'}`}
+            >
+              <p className="font-medium text-sm text-white mb-0.5">Masculina</p>
+              <p className="text-xs text-gray-400">Voz padrão: Eliel (PT-BR)</p>
+            </button>
+          </div>
+          <p className="text-xs text-gray-500 mt-1.5">Você pode trocar a voz específica depois nas configurações.</p>
+        </div>
+
+        <div>
           <label className="text-sm font-medium text-gray-300 block mb-1.5">Mensagem de boas-vindas</label>
           <input
             className="input"

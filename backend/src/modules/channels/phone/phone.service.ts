@@ -7,6 +7,13 @@ import { TenantsService } from '../../tenants/tenants.service'
 import axios from 'axios'
 import * as twilio from 'twilio'
 
+// Default Portuguese (BR) voices, picked from the account's available pt-labeled voices.
+// Used when creating a fresh agent if the user hasn't picked a voice yet.
+const DEFAULT_PT_VOICE = {
+  male: 'y3X5crcIDtFawPx7bcNq',   // Eliel - Contador de histórias
+  female: 'e06XicPETIbfUaeHM9zH', // Fabi - Portuguese (BR)
+} as const
+
 @Injectable()
 export class PhoneService {
   private readonly logger = new Logger(PhoneService.name)
@@ -192,7 +199,7 @@ export class PhoneService {
     return number.phoneNumber
   }
 
-  async createElevenLabsAgent(tenantId: string): Promise<string> {
+  async createElevenLabsAgent(tenantId: string, opts: { gender?: 'male' | 'female' } = {}): Promise<string> {
     const cfg = await this.agentService.getConfig(tenantId)
     const tenant = await this.tenantsService.findById(tenantId)
 
@@ -200,6 +207,8 @@ export class PhoneService {
       this.logger.log(`[${tenantId}] ElevenLabs agent already exists: ${tenant.elevenLabsAgentId}`)
       return tenant.elevenLabsAgentId
     }
+
+    const defaultVoice = DEFAULT_PT_VOICE[opts.gender ?? 'female']
 
     const backendUrl = this.config.get('BACKEND_PUBLIC_URL') || this.config.get('BACKEND_URL')
     const hasHandoff = cfg.handoffMode !== 'none' && cfg.handoffPhone
@@ -242,7 +251,7 @@ export class PhoneService {
             language,
           },
           tts: {
-            voice_id: tenant.elevenLabsVoiceId || this.config.get('ELEVENLABS_DEFAULT_VOICE_ID') || 'Rachel',
+            voice_id: tenant.elevenLabsVoiceId || defaultVoice,
             model_id: 'eleven_v3_conversational',
             expressive_mode: true,
           },
@@ -252,8 +261,12 @@ export class PhoneService {
     )
 
     const agentId = response.data.agent_id
-    await this.tenantsService.update(tenantId, { elevenLabsAgentId: agentId, elevenLabsExpressiveMode: true })
-    this.logger.log(`[${tenantId}] ElevenLabs agent created: ${agentId} (transfer tool: ${hasHandoff})`)
+    await this.tenantsService.update(tenantId, {
+      elevenLabsAgentId: agentId,
+      elevenLabsVoiceId: tenant.elevenLabsVoiceId || defaultVoice,
+      elevenLabsExpressiveMode: true,
+    })
+    this.logger.log(`[${tenantId}] ElevenLabs agent created: ${agentId} (transfer tool: ${hasHandoff}, voice: ${opts.gender ?? 'female'})`)
     return agentId
   }
 
@@ -261,11 +274,38 @@ export class PhoneService {
     const tenant = await this.tenantsService.findById(tenantId)
     if (!tenant.elevenLabsAgentId) throw new NotFoundException('Agente ElevenLabs não criado')
     const apiKey = this.config.get('ELEVENLABS_API_KEY')
-    const { data } = await axios.get(
+    let { data } = await axios.get(
       `https://api.elevenlabs.io/v1/convai/agents/${tenant.elevenLabsAgentId}`,
       { headers: { 'xi-api-key': apiKey } },
     )
-    const cfg = data.conversation_config || {}
+    let cfg = data.conversation_config || {}
+
+    // Self-heal: tenant intent says expressive mode is on, but the agent is on a non-v3 model
+    // (older agents created before the v3 default). Migrate it transparently to v3 conversational
+    // so the UI reflects the saved intent and audio tags actually work.
+    if (
+      tenant.elevenLabsExpressiveMode &&
+      cfg.tts?.model_id !== 'eleven_v3_conversational' &&
+      cfg.tts?.expressive_mode !== true
+    ) {
+      try {
+        await axios.patch(
+          `https://api.elevenlabs.io/v1/convai/agents/${tenant.elevenLabsAgentId}`,
+          { conversation_config: { tts: { model_id: 'eleven_v3_conversational', expressive_mode: true } } },
+          { headers: { 'xi-api-key': apiKey } },
+        )
+        this.logger.log(`[${tenantId}] migrated agent to eleven_v3_conversational + expressive_mode`)
+        const refreshed = await axios.get(
+          `https://api.elevenlabs.io/v1/convai/agents/${tenant.elevenLabsAgentId}`,
+          { headers: { 'xi-api-key': apiKey } },
+        )
+        data = refreshed.data
+        cfg = data.conversation_config || {}
+      } catch (e: any) {
+        this.logger.warn(`[${tenantId}] expressive-mode migration failed: ${e?.response?.data?.detail || e.message}`)
+      }
+    }
+
     return {
       agentId: tenant.elevenLabsAgentId,
       name: data.name,
@@ -374,18 +414,27 @@ export class PhoneService {
     return data.signed_url as string
   }
 
-  async listElevenLabsVoices() {
+  async listElevenLabsVoices(language?: string) {
     const apiKey = this.config.get('ELEVENLABS_API_KEY')
     const { data } = await axios.get(
       'https://api.elevenlabs.io/v1/voices',
       { headers: { 'xi-api-key': apiKey } },
     )
-    return (data.voices || []).map((v: any) => ({
-      id: v.voice_id,
-      name: v.name,
-      preview: v.preview_url,
-      category: v.category,
-    }))
+    const wanted = language?.toLowerCase().split('-')[0]  // 'pt-br' → 'pt'
+    return (data.voices || [])
+      .filter((v: any) => {
+        if (!wanted) return true
+        const labelLang = (v.labels?.language || '').toLowerCase()
+        return labelLang === wanted
+      })
+      .map((v: any) => ({
+        id: v.voice_id,
+        name: v.name,
+        preview: v.preview_url,
+        category: v.category,
+        gender: v.labels?.gender,
+        language: v.labels?.language,
+      }))
   }
 
   private buildTwiml(content: string): string {

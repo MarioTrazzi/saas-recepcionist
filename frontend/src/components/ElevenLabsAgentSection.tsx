@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState, useEffect, useRef } from 'react'
 import {
   Mic, Save, RefreshCw, Play, Square, Loader2, AlertCircle,
-  CheckCircle, Volume2, Sparkles, ChevronRight, ExternalLink,
+  CheckCircle, Volume2, Sparkles, ChevronRight,
   PhoneCall, Zap,
 } from 'lucide-react'
 import { phoneApi } from '@/lib/api'
@@ -115,8 +115,8 @@ export default function ElevenLabsAgentSection({
   })
 
   const { data: voices = [], isLoading: loadingVoices } = useQuery({
-    queryKey: ['elevenlabs-voices'],
-    queryFn: phoneApi.listElevenLabsVoices,
+    queryKey: ['elevenlabs-voices', 'pt'],
+    queryFn: () => phoneApi.listElevenLabsVoices('pt'),
     staleTime: 5 * 60_000,
   })
 
@@ -216,20 +216,10 @@ export default function ElevenLabsAgentSection({
     <div className="card p-6 space-y-5">
 
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Mic className="h-4 w-4 text-primary" />
-          <span className="font-semibold text-white">Agente</span>
-          <span className="text-[10px] font-bold bg-gray-700 text-gray-300 px-1.5 py-0.5 rounded">NOVO</span>
-        </div>
-        <a
-          href={`https://elevenlabs.io/app/conversational-ai/${agent.agentId}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs text-gray-500 hover:text-primary flex items-center gap-1 transition-colors"
-        >
-          <ExternalLink className="h-3 w-3" /> Abrir no ElevenLabs
-        </a>
+      <div className="flex items-center gap-3">
+        <Mic className="h-4 w-4 text-primary" />
+        <span className="font-semibold text-white">Agente</span>
+        <span className="text-[10px] font-bold bg-gray-700 text-gray-300 px-1.5 py-0.5 rounded">NOVO</span>
       </div>
 
       {/* No-channel warning */}

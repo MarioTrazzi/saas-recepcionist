@@ -23,6 +23,7 @@ export interface WizardData {
   templateId: string
   templateCategory: string
   agentName: string
+  agentGender: 'male' | 'female'
   greetingMessage: string
   systemPrompt: string
   tone: string
@@ -61,6 +62,7 @@ const EMPTY: WizardData = {
   templateId: '',
   templateCategory: 'custom',
   agentName: '',
+  agentGender: 'female',
   greetingMessage: '',
   systemPrompt: '',
   tone: 'friendly',
@@ -158,7 +160,7 @@ export default function WizardPage() {
       }
 
       try {
-        await phoneApi.createElevenLabsAgent()
+        await phoneApi.createElevenLabsAgent({ gender: data.agentGender })
       } catch (e) {
         console.warn('ElevenLabs agent creation skipped:', e)
       }

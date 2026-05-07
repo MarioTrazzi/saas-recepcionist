@@ -48,11 +48,13 @@ export const phoneApi = {
   listNumbers: () => api.get('/phone/numbers').then(r => r.data),
   assign: (phoneSid: string) => api.post('/phone/assign', { phoneSid }).then(r => r.data),
   provision: (areaCode?: string) => api.post('/phone/provision', { areaCode }).then(r => r.data),
-  createElevenLabsAgent: () => api.post('/phone/create-elevenlabs-agent').then(r => r.data),
+  createElevenLabsAgent: (data?: { gender?: 'male' | 'female' }) =>
+    api.post('/phone/create-elevenlabs-agent', data ?? {}).then(r => r.data),
   getElevenLabsAgent: () => api.get('/phone/elevenlabs-agent').then(r => r.data),
   updateElevenLabsAgent: (data: { name?: string; prompt?: string; firstMessage?: string; language?: string; voiceId?: string; expressiveMode?: boolean; interruptible?: boolean; llm?: string }) =>
     api.patch('/phone/elevenlabs-agent', data).then(r => r.data),
-  listElevenLabsVoices: () => api.get('/phone/elevenlabs-voices').then(r => r.data),
+  listElevenLabsVoices: (language?: string) =>
+    api.get('/phone/elevenlabs-voices', { params: language ? { language } : undefined }).then(r => r.data),
   getConversationToken: () => api.get('/phone/elevenlabs-conversation-token').then(r => r.data as { signedUrl: string }),
 }
 

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param, Res, UseGuards, Request, Get, Patch, Headers } from '@nestjs/common'
+import { Controller, Post, Body, Param, Res, UseGuards, Request, Get, Patch, Headers, Query } from '@nestjs/common'
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger'
 import { Response } from 'express'
 import { PhoneService } from './phone.service'
@@ -62,8 +62,8 @@ export class PhoneController {
   @Post('create-elevenlabs-agent')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  async createAgent(@Request() req) {
-    const agentId = await this.svc.createElevenLabsAgent(req.user.tenantId)
+  async createAgent(@Request() req, @Body() body: { gender?: 'male' | 'female' } = {}) {
+    const agentId = await this.svc.createElevenLabsAgent(req.user.tenantId, { gender: body?.gender })
     return { agentId }
   }
 
@@ -93,11 +93,12 @@ export class PhoneController {
   }
 
   // Authenticated — list ElevenLabs voices for this account
+  // Optional ?language=pt filters to voices labeled with that language (e.g. pt for Brazilian Portuguese)
   @Get('elevenlabs-voices')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  async listVoices() {
-    return this.svc.listElevenLabsVoices()
+  async listVoices(@Query('language') language?: string) {
+    return this.svc.listElevenLabsVoices(language)
   }
 
   // Public webhook — called by ElevenLabs when agent decides to transfer the call
