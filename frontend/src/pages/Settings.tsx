@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState, useEffect } from 'react'
 import {
   Phone, MessageSquare, Zap, Bot,
-  Wifi, Loader2, AlertCircle, CheckCircle, ChevronDown, Copy, Check, KeyRound, ExternalLink,
+  Loader2, AlertCircle, CheckCircle, ChevronDown, Copy, Check, KeyRound, ExternalLink,
   Save, User, FileText, GitMerge,
 } from 'lucide-react'
 
@@ -463,16 +463,14 @@ export default function SettingsPage() {
             <div className="space-y-3">
               <div className="flex items-center gap-4 p-4 rounded-xl bg-green-500/8 border border-green-500/30">
                 <div className="h-10 w-10 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
-                  <Wifi className="h-5 w-5 text-green-400" />
+                  <CheckCircle className="h-5 w-5 text-green-400" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-green-300">WhatsApp Business conectado</p>
+                  <p className="text-sm font-semibold text-green-300">Conectado</p>
                   {tenant?.whatsappPhoneNumber && (
-                    <p className="text-xs text-gray-400 mt-0.5">{tenant.whatsappPhoneNumber}</p>
+                    <p className="text-base font-mono font-semibold text-white mt-0.5">{tenant.whatsappPhoneNumber}</p>
                   )}
-                  <p className="text-xs text-gray-500 mt-0.5">Agente recebendo e respondendo mensagens via Cloud API.</p>
                 </div>
-                <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
               </div>
 
               {waStatus?.error && (
@@ -530,6 +528,13 @@ export default function SettingsPage() {
                   <div>
                     <p className="text-sm font-semibold text-white">Conectar com Meta</p>
                     <p className="text-xs text-gray-400">Sua conta Business é detectada automaticamente</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2 text-xs text-yellow-300 bg-yellow-500/8 border border-yellow-500/25 rounded-lg px-3 py-2">
+                  <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5 text-yellow-400" />
+                  <div className="leading-relaxed">
+                    O número precisa estar registrado como <strong>WhatsApp Business</strong> (não pode ser uma conta WhatsApp pessoal). Se ainda não tiver, baixe o app WhatsApp Business e registre o número antes de continuar.
                   </div>
                 </div>
 
