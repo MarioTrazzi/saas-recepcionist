@@ -367,9 +367,8 @@ export class PhoneService {
     const tenant = await this.tenantsService.findById(tenantId)
     if (!tenant.elevenLabsAgentId) throw new NotFoundException('Agente ElevenLabs não criado')
     const apiKey = this.config.get('ELEVENLABS_API_KEY')
-    const { data } = await axios.post(
-      `https://api.elevenlabs.io/v1/convai/conversation/get_signed_url?agent_id=${tenant.elevenLabsAgentId}`,
-      {},
+    const { data } = await axios.get(
+      `https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id=${tenant.elevenLabsAgentId}`,
       { headers: { 'xi-api-key': apiKey } },
     )
     return data.signed_url as string
