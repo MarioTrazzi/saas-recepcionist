@@ -57,6 +57,11 @@ export class Tenant {
   @Column({ nullable: true })
   elevenLabsAgentId: string
 
+  // ElevenLabs phone-number record (phnum_*) that owns the Twilio voiceUrl.
+  // When set, ElevenLabs is handling inbound calls natively; our backend is bypassed.
+  @Column({ nullable: true })
+  elevenLabsPhoneNumberId: string
+
   @Column({ type: 'boolean', default: false })
   elevenLabsExpressiveMode: boolean
 

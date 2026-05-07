@@ -152,15 +152,8 @@ export class PhoneService {
   }
 
   async assignExistingNumber(tenantId: string, phoneSid: string): Promise<string> {
-    const backendUrl = this.config.get('BACKEND_PUBLIC_URL') || this.config.get('BACKEND_URL')
-
     try {
-      const number = await this.client.incomingPhoneNumbers(phoneSid).update({
-        voiceUrl: `${backendUrl}/api/phone/incoming/${tenantId}`,
-        voiceMethod: 'POST',
-        statusCallback: `${backendUrl}/api/phone/status/${tenantId}`,
-        statusCallbackMethod: 'POST',
-      })
+      const number = await this.client.incomingPhoneNumbers(phoneSid).fetch()
 
       await this.tenantsService.update(tenantId, {
         twilioPhoneNumber: number.phoneNumber,
@@ -169,6 +162,7 @@ export class PhoneService {
       })
 
       this.logger.log(`[${tenantId}] Assigned existing number ${number.phoneNumber}`)
+      await this.linkNumberToElevenLabs(tenantId)
       return number.phoneNumber
     } catch (err: any) {
       const msg = err.message || 'Erro ao configurar número'
@@ -181,13 +175,8 @@ export class PhoneService {
     const available = await this.client.availablePhoneNumbers('BR').local.list({ areaCode: parseInt(areaCode), limit: 1 })
     if (!available.length) throw new Error('No numbers available in this area code')
 
-    const backendUrl = this.config.get('BACKEND_PUBLIC_URL') || this.config.get('BACKEND_URL')
     const number = await this.client.incomingPhoneNumbers.create({
       phoneNumber: available[0].phoneNumber,
-      voiceUrl: `${backendUrl}/api/phone/incoming/${tenantId}`,
-      voiceMethod: 'POST',
-      statusCallback: `${backendUrl}/api/phone/status/${tenantId}`,
-      statusCallbackMethod: 'POST',
     })
 
     await this.tenantsService.update(tenantId, {
@@ -196,6 +185,7 @@ export class PhoneService {
       phoneChannelEnabled: true,
     })
 
+    await this.linkNumberToElevenLabs(tenantId)
     return number.phoneNumber
   }
 
@@ -267,7 +257,75 @@ export class PhoneService {
       elevenLabsExpressiveMode: true,
     })
     this.logger.log(`[${tenantId}] ElevenLabs agent created: ${agentId} (transfer tool: ${hasHandoff}, voice: ${opts.gender ?? 'female'})`)
+    await this.linkNumberToElevenLabs(tenantId)
     return agentId
+  }
+
+  // Native Twilio↔ElevenLabs integration. Idempotent: safe to call after either step
+  // of the wizard (number assignment or agent creation); the other becomes a no-op until
+  // both are present.
+  //
+  // ElevenLabs has a known bug: POST /phone-numbers/create accepts agent_id but does
+  // not persist it. We always PATCH the assignment after create to converge.
+  private async linkNumberToElevenLabs(tenantId: string): Promise<void> {
+    const tenant = await this.tenantsService.findById(tenantId)
+    if (!tenant.twilioPhoneNumber || !tenant.elevenLabsAgentId) return
+
+    const apiKey = this.config.get('ELEVENLABS_API_KEY')
+    const headers = { 'xi-api-key': apiKey }
+
+    // If we have a saved phnum, try to refresh the assignment first.
+    if (tenant.elevenLabsPhoneNumberId) {
+      try {
+        await axios.patch(
+          `https://api.elevenlabs.io/v1/convai/phone-numbers/${tenant.elevenLabsPhoneNumberId}`,
+          { agent_id: tenant.elevenLabsAgentId },
+          { headers },
+        )
+        this.logger.log(`[${tenantId}] re-confirmed ElevenLabs phnum ${tenant.elevenLabsPhoneNumberId}`)
+        return
+      } catch (e: any) {
+        this.logger.warn(`[${tenantId}] saved phnum invalid (${e?.response?.status}); recreating`)
+      }
+    }
+
+    // Look up an existing record for this number (e.g., re-imported manually or by a prior run).
+    let phnumId: string | undefined
+    try {
+      const { data } = await axios.get('https://api.elevenlabs.io/v1/convai/phone-numbers/', { headers })
+      const existing = (data || []).find((p: any) => p.phone_number === tenant.twilioPhoneNumber)
+      if (existing) phnumId = existing.phone_number_id
+    } catch (e: any) {
+      this.logger.warn(`[${tenantId}] failed to list ElevenLabs phone numbers: ${e.message}`)
+    }
+
+    if (!phnumId) {
+      const sid = this.config.get('TWILIO_ACCOUNT_SID')
+      const token = this.config.get('TWILIO_AUTH_TOKEN')
+      const { data } = await axios.post(
+        'https://api.elevenlabs.io/v1/convai/phone-numbers/create',
+        {
+          phone_number: tenant.twilioPhoneNumber,
+          label: `${tenant.name} - ${tenant.twilioPhoneNumber}`,
+          agent_id: tenant.elevenLabsAgentId,
+          provider: 'twilio',
+          sid,
+          token,
+        },
+        { headers },
+      )
+      phnumId = data.phone_number_id
+      this.logger.log(`[${tenantId}] created ElevenLabs phnum ${phnumId}`)
+    }
+
+    await axios.patch(
+      `https://api.elevenlabs.io/v1/convai/phone-numbers/${phnumId}`,
+      { agent_id: tenant.elevenLabsAgentId },
+      { headers },
+    )
+
+    await this.tenantsService.update(tenantId, { elevenLabsPhoneNumberId: phnumId })
+    this.logger.log(`[${tenantId}] linked ${tenant.twilioPhoneNumber} → agent ${tenant.elevenLabsAgentId} via phnum ${phnumId}`)
   }
 
   async getElevenLabsAgent(tenantId: string) {
