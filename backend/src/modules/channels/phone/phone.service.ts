@@ -243,7 +243,7 @@ export class PhoneService {
           },
           tts: {
             voice_id: tenant.elevenLabsVoiceId || this.config.get('ELEVENLABS_DEFAULT_VOICE_ID') || 'Rachel',
-            model_id: 'eleven_turbo_v2_5',
+            model_id: 'eleven_v3_conversational',
             expressive_mode: true,
           },
         },
@@ -341,9 +341,11 @@ export class PhoneService {
             }),
           },
           tts: {
-            model_id: 'eleven_turbo_v2_5',
+            ...(dto.expressiveMode !== undefined && {
+              model_id: dto.expressiveMode ? 'eleven_v3_conversational' : 'eleven_turbo_v2_5',
+              expressive_mode: dto.expressiveMode,
+            }),
             ...(dto.voiceId !== undefined && { voice_id: dto.voiceId }),
-            ...(dto.expressiveMode !== undefined && { expressive_mode: dto.expressiveMode }),
           },
         },
       },

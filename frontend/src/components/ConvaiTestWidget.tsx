@@ -24,9 +24,9 @@ export default function ConvaiTestWidget({ agentId }: Props) {
   const { status, isSpeaking, startSession, endSession, getInputVolume, getOutputVolume } = conversation
 
   const statusStr = status as string
-  const isIdle = statusStr === 'idle'
   const isConnecting = statusStr === 'connecting' || fetchingToken
   const isConnected = statusStr === 'connected'
+  const isIdle = !isConnecting && !isConnected
 
   // ── Audio visualization loop ───────────────────────────────────────────
   useEffect(() => {

@@ -43,13 +43,31 @@ function userFromPayload(payload: any): User | null {
 function isTokenValid(token: string): boolean {
   const payload = decodeJwt(token)
   if (!payload) return false
-  // exp is in seconds
   return payload.exp ? payload.exp * 1000 > Date.now() : true
 }
 
+// Hydrate synchronously at module load time so the first render already knows
+// whether the user is logged in — no flash, no useEffect required.
+function loadFromStorage(): { token: string | null; user: User | null } {
+  try {
+    const stored = localStorage.getItem('token')
+    if (!stored) return { token: null, user: null }
+    if (!isTokenValid(stored)) {
+      localStorage.removeItem('token')
+      return { token: null, user: null }
+    }
+    const payload = decodeJwt(stored)
+    return { token: stored, user: userFromPayload(payload) }
+  } catch {
+    return { token: null, user: null }
+  }
+}
+
+const _initial = loadFromStorage()
+
 export const useAuthStore = create<AuthStore>((set, get) => ({
-  user: null,
-  token: null,
+  user: _initial.user,
+  token: _initial.token,
 
   isAuthenticated: () => !!get().token,
 
@@ -69,13 +87,17 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   },
 
   login: async (email, password) => {
-    const { token, user } = await authApi.login(email, password)
+    const res = await authApi.login(email, password)
+    const token: string = res.token
+    const user: User = res.user ?? userFromPayload(decodeJwt(token))
     localStorage.setItem('token', token)
     set({ token, user })
   },
 
   register: async (data) => {
-    const { token, user } = await authApi.register(data)
+    const res = await authApi.register(data)
+    const token: string = res.token
+    const user: User = res.user ?? userFromPayload(decodeJwt(token))
     localStorage.setItem('token', token)
     set({ token, user })
   },

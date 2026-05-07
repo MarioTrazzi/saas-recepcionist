@@ -4,7 +4,7 @@ import {
   Phone, MessageSquare, CheckCircle2, ArrowRight,
   Globe, BarChart3, Calendar, Users, Brain, Plus, Zap,
   FileText, Upload, MousePointerClick, Wifi, UserPlus,
-  LayoutDashboard, LogOut, ChevronDown,
+  LayoutDashboard, LogOut, ChevronDown, Settings, CreditCard,
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
 import './Landing.css'
@@ -135,20 +135,28 @@ function UserMenu() {
               </div>
             )}
           </div>
-          <button
-            role="menuitem"
-            onClick={() => { setOpen(false); navigate('/app/dashboard') }}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              width: '100%', padding: '10px 12px', borderRadius: 8,
-              background: 'transparent', border: 'none', cursor: 'pointer',
-              color: 'var(--text)', fontSize: 13, fontFamily: 'inherit', textAlign: 'left',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,.06)' }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
-          >
-            <LayoutDashboard style={{ width: 16, height: 16, opacity: .8 }} /> Ir para o painel
-          </button>
+          {([
+            { icon: <LayoutDashboard style={{ width: 16, height: 16, opacity: .8 }} />, label: 'Painel', to: '/app/dashboard' },
+            { icon: <Settings style={{ width: 16, height: 16, opacity: .8 }} />, label: 'Configurações', to: '/app/settings' },
+            { icon: <CreditCard style={{ width: 16, height: 16, opacity: .8 }} />, label: 'Faturamento', to: '/app/billing' },
+          ] as const).map(item => (
+            <button
+              key={item.to}
+              role="menuitem"
+              onClick={() => { setOpen(false); navigate(item.to) }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                width: '100%', padding: '10px 12px', borderRadius: 8,
+                background: 'transparent', border: 'none', cursor: 'pointer',
+                color: 'var(--text)', fontSize: 13, fontFamily: 'inherit', textAlign: 'left',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,.06)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+            >
+              {item.icon} {item.label}
+            </button>
+          ))}
+          <div style={{ height: 1, background: 'rgba(255,255,255,.08)', margin: '4px 0' }} />
           <button
             role="menuitem"
             onClick={handleLogout}

@@ -30,6 +30,8 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+.claude/
+**/.claude/
 
 # TypeScript cache
 *.tsbuildinfo
